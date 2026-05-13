@@ -128,16 +128,15 @@ def create_app(config=None):
                     sheets.delete_row_by_id(key, body['id'])
 
             elif sheet_key == 'year':
-                row = body['row']
-                existing = sheets._read_sheet('budget')
-                match = next((r for r in existing if r['שנה'] == row['שנה']), None)
-                if match or action == 'create':
-                    if match:
-                        sheets.update_row_by_id('budget', row['שנה'],
-                            [row['שנה'], row['תקציב_פתיחה'], row['חודש_סיום']])
-                    else:
-                        sheets.append_row('budget',
-                            [row['שנה'], row['תקציב_פתיחה'], row['חודש_סיום']])
+                row = body.get('row', {})
+                if action == 'create':
+                    sheets.append_row('budget',
+                        [row['שנה'], row['תקציב_פתיחה'], row['חודש_סיום']])
+                elif action == 'update':
+                    sheets.update_row_by_id('budget', row['שנה'],
+                        [row['שנה'], row['תקציב_פתיחה'], row['חודש_סיום']])
+                elif action == 'delete':
+                    sheets.delete_row_by_id('budget', body['id'])
 
             return jsonify({'ok': True})
 
