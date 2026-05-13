@@ -14,8 +14,8 @@ def create_app(config=None):
         if not app.config.get('TESTING'):
             try:
                 sheets.seed_sheets()
-            except Exception:
-                pass  # no credentials yet during development
+            except Exception as e:
+                app.logger.warning('seed_sheets() failed: %s', e)
 
     @app.route('/')
     def index():
@@ -33,6 +33,8 @@ def create_app(config=None):
     def transaction():
         try:
             body = request.get_json()
+            if body is None:
+                return jsonify({'ok': False, 'error': 'Request body must be valid JSON'}), 400
             action = body.get('action')
 
             if action == 'create':
@@ -67,6 +69,8 @@ def create_app(config=None):
     def reserve():
         try:
             body = request.get_json()
+            if body is None:
+                return jsonify({'ok': False, 'error': 'Request body must be valid JSON'}), 400
             action = body.get('action')
 
             if action == 'create':
@@ -102,6 +106,8 @@ def create_app(config=None):
                 })
 
             body = request.get_json()
+            if body is None:
+                return jsonify({'ok': False, 'error': 'Request body must be valid JSON'}), 400
             sheet_key = body['type']
             action = body['action']
 
@@ -115,6 +121,8 @@ def create_app(config=None):
                     sheets.update_row_by_id(key, row['id'], [row['id'], row['שם'], row['פעיל']])
                 elif action == 'delete':
                     sheets.delete_row_by_id(key, body['id'])
+                else:
+                    return jsonify({'ok': False, 'error': f'unknown action: {action}'}), 400
 
             elif sheet_key == 'status':
                 key = 'statuses'
@@ -126,6 +134,8 @@ def create_app(config=None):
                     sheets.update_row_by_id(key, row['id'], [row['id'], row['שם'], row['צבע']])
                 elif action == 'delete':
                     sheets.delete_row_by_id(key, body['id'])
+                else:
+                    return jsonify({'ok': False, 'error': f'unknown action: {action}'}), 400
 
             elif sheet_key == 'year':
                 row = body.get('row', {})
@@ -137,6 +147,11 @@ def create_app(config=None):
                         [row['שנה'], row['תקציב_פתיחה'], row['חודש_סיום']])
                 elif action == 'delete':
                     sheets.delete_row_by_id('budget', body['id'])
+                else:
+                    return jsonify({'ok': False, 'error': f'unknown action: {action}'}), 400
+
+            else:
+                return jsonify({'ok': False, 'error': f'unknown type: {sheet_key}'}), 400
 
             return jsonify({'ok': True})
 
