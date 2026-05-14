@@ -694,3 +694,179 @@ function closeModal(event) {
   if (event.target === document.getElementById('statuses-modal')) closeManageStatuses();
   if (event.target === document.getElementById('settings-overlay')) closeSettings();
 }
+
+// ═══════════════════════════════════════════════════════
+// MANAGE SUPPLIERS
+// ═══════════════════════════════════════════════════════
+function openManageSuppliers() {
+  renderSuppliersList();
+  document.getElementById('suppliers-modal').classList.remove('hidden');
+}
+
+function closeManageSuppliers() {
+  document.getElementById('suppliers-modal').classList.add('hidden');
+  renderFilterSelects();
+  // Refresh supplier dropdown in transaction modal if open
+  const supSel = document.getElementById('txn-supplier');
+  if (supSel) {
+    supSel.innerHTML = APP.raw.suppliers
+      .filter(s => s['פעיל'] === 'TRUE')
+      .map(s => `<option value="${s['שם']}">${s['שם']}</option>`).join('');
+  }
+}
+
+function renderSuppliersList() {
+  document.getElementById('suppliers-list').innerHTML =
+    APP.raw.suppliers.map(s => `
+      <div class="manage-item">
+        <span>${s['שם']} ${s['פעיל'] === 'FALSE' ? '<em style="color:#8a8a8a;font-size:11px">(לא פעיל)</em>' : ''}</span>
+        <div class="manage-item-actions">
+          <button class="action-btn" onclick="toggleSupplierActive('${s.id}','${s['שם']}','${s['פעיל']}')" title="${s['פעיל']==='TRUE'?'הסתר':'הפעל'}">
+            ${s['פעיל'] === 'TRUE' ? '○' : '●'}
+          </button>
+          <button class="action-btn del" onclick="deleteSupplier('${s.id}','${s['שם']}')">✕</button>
+        </div>
+      </div>`).join('');
+}
+
+async function addSupplier() {
+  const name = document.getElementById('new-supplier-name').value.trim();
+  if (!name) return;
+  const row = { id: String(Date.now()), שם: name, פעיל: 'TRUE' };
+  await fetch('/api/settings', { method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ type: 'supplier', action: 'create', row }) });
+  APP.raw.suppliers.push(row);
+  assignColors();
+  document.getElementById('new-supplier-name').value = '';
+  renderSuppliersList();
+}
+
+async function toggleSupplierActive(id, name, current) {
+  const newActive = current === 'TRUE' ? 'FALSE' : 'TRUE';
+  const row = { id, שם: name, פעיל: newActive };
+  await fetch('/api/settings', { method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ type: 'supplier', action: 'update', row }) });
+  const s = APP.raw.suppliers.find(x => x.id === id);
+  if (s) s['פעיל'] = newActive;
+  renderSuppliersList();
+}
+
+async function deleteSupplier(id, name) {
+  if (!confirm(`למחוק את הספק "${name}"?`)) return;
+  await fetch('/api/settings', { method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ type: 'supplier', action: 'delete', id }) });
+  APP.raw.suppliers = APP.raw.suppliers.filter(s => s.id !== id);
+  assignColors();
+  renderSuppliersList();
+}
+
+// ═══════════════════════════════════════════════════════
+// MANAGE STATUSES
+// ═══════════════════════════════════════════════════════
+function openManageStatuses() {
+  renderStatusesList();
+  document.getElementById('statuses-modal').classList.remove('hidden');
+}
+
+function closeManageStatuses() {
+  document.getElementById('statuses-modal').classList.add('hidden');
+  renderFilterSelects();
+  const stSel = document.getElementById('txn-status');
+  if (stSel) {
+    stSel.innerHTML = APP.raw.statuses
+      .map(s => `<option value="${s['שם']}">${s['שם']}</option>`).join('');
+  }
+}
+
+function renderStatusesList() {
+  document.getElementById('statuses-list').innerHTML =
+    APP.raw.statuses.map(s => `
+      <div class="manage-item">
+        <span>
+          <span class="status-badge" style="background:${s['צבע']}22;color:${s['צבע']}">${s['שם']}</span>
+        </span>
+        <div class="manage-item-actions">
+          <button class="action-btn del" onclick="deleteStatus('${s.id}','${s['שם']}')">✕</button>
+        </div>
+      </div>`).join('');
+}
+
+async function addStatus() {
+  const name  = document.getElementById('new-status-name').value.trim();
+  const color = document.getElementById('new-status-color').value;
+  if (!name) return;
+  const row = { id: String(Date.now()), שם: name, צבע: color };
+  await fetch('/api/settings', { method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ type: 'status', action: 'create', row }) });
+  APP.raw.statuses.push(row);
+  document.getElementById('new-status-name').value = '';
+  renderStatusesList();
+}
+
+async function deleteStatus(id, name) {
+  if (!confirm(`למחוק את הסטטוס "${name}"?`)) return;
+  await fetch('/api/settings', { method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ type: 'status', action: 'delete', id }) });
+  APP.raw.statuses = APP.raw.statuses.filter(s => s.id !== id);
+  renderStatusesList();
+}
+
+// ═══════════════════════════════════════════════════════
+// SETTINGS PANEL — YEAR MANAGEMENT
+// ═══════════════════════════════════════════════════════
+function openSettings() {
+  renderYearsList();
+  document.getElementById('settings-overlay').classList.remove('hidden');
+}
+
+function closeSettings(event) {
+  if (event && event.target !== document.getElementById('settings-overlay') &&
+      event.type === 'click') return;
+  document.getElementById('settings-overlay').classList.add('hidden');
+}
+
+function renderYearsList() {
+  document.getElementById('years-list').innerHTML =
+    APP.raw.budget.map(r => `
+      <div class="year-manage-item">
+        <strong>${r['שנה']}</strong>
+        <span style="font-size:11px;color:#727272">תקציב:</span>
+        <input type="number" class="form-input" value="${r['תקציב_פתיחה']}"
+          onchange="updateYear('${r['שנה']}',this.value,'${r['חודש_סיום']}')">
+        <span style="font-size:11px;color:#727272">חודש סיום:</span>
+        <input type="number" class="form-input" style="width:60px" min="1" max="12" value="${r['חודש_סיום']}"
+          onchange="updateYear('${r['שנה']}','${r['תקציב_פתיחה']}',this.value)">
+      </div>`).join('');
+}
+
+async function updateYear(yearStr, budget, endMonth) {
+  const row = { שנה: yearStr, תקציב_פתיחה: budget, חודש_סיום: endMonth };
+  await fetch('/api/settings', { method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ type: 'year', action: 'update', row }) });
+  const y = APP.raw.budget.find(r => r['שנה'] === yearStr);
+  if (y) { y['תקציב_פתיחה'] = budget; y['חודש_סיום'] = endMonth; }
+  renderKPIs();
+}
+
+async function addYear() {
+  const yearStr  = document.getElementById('new-year-str').value.trim();
+  const budget   = document.getElementById('new-year-budget').value;
+  const endMonth = document.getElementById('new-year-endmonth').value || '8';
+  if (!yearStr || !budget) return;
+
+  const row = { שנה: yearStr, תקציב_פתיחה: budget, חודש_סיום: endMonth };
+  await fetch('/api/settings', { method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ type: 'year', action: 'create', row }) });
+
+  APP.raw.budget.push(row);
+  document.getElementById('new-year-str').value    = '';
+  document.getElementById('new-year-budget').value = '';
+
+  // Update year selector
+  const sel = document.getElementById('year-select');
+  const opt = document.createElement('option');
+  opt.value = opt.textContent = yearStr;
+  sel.appendChild(opt);
+
+  renderYearsList();
+}
