@@ -21,6 +21,15 @@ const HEB_MONTHS = {
   7:'יול׳',8:'אוג׳',9:'ספט׳',10:'אוק׳',11:'נוב׳',12:'דצמ׳',
 };
 
+function escHtml(s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
 // ═══════════════════════════════════════════════════════
 // BOOTSTRAP
 // ═══════════════════════════════════════════════════════
@@ -112,8 +121,10 @@ function computeKPIs() {
 }
 
 function calcMonthsLeft(yearStr, endMonth) {
-  const [, endYearStr] = yearStr.split('/');
-  const endYear = parseInt(endYearStr);
+  const parts = yearStr.split('/');
+  if (parts.length < 2) return 0;
+  const endYear = parseInt(parts[1]);
+  if (isNaN(endYear)) return 0;
   const now = new Date();
   const diff = (endYear - now.getFullYear()) * 12 + (endMonth - (now.getMonth() + 1));
   return Math.max(0, diff);
@@ -241,7 +252,7 @@ function renderCharts() {
   document.getElementById('bar-legend').innerHTML = active.map(sup =>
     `<div class="legend-item">
        <div class="legend-dot" style="background:${APP.colors[sup]||'#ccc'}"></div>
-       ${sup}
+       ${escHtml(sup)}
      </div>`
   ).join('');
 
@@ -264,6 +275,9 @@ function renderCharts() {
       },
     },
   });
+
+  document.getElementById('btn-stacked').classList.add('active');
+  document.getElementById('btn-grouped').classList.remove('active');
 
   // Pie chart
   const total   = totals.reduce((a, b) => a + b, 0);
@@ -289,7 +303,7 @@ function renderCharts() {
           callbacks: {
             label: ctx => {
               const pct = total > 0 ? ((ctx.parsed / total) * 100).toFixed(1) : '0.0';
-              return `  ${ctx.label}: ₪${Math.round(ctx.parsed).toLocaleString()} (${pct}%)`;
+              return `ספק: ₪${Math.round(ctx.parsed).toLocaleString()} (${pct}%)`;
             },
           },
           bodyFont: { family: 'Heebo', size: 12 },
@@ -323,12 +337,12 @@ function renderReserves() {
     return `
       <div class="reserve-card" style="border-top-color:${color}">
         <div class="reserve-actions no-print">
-          <button class="action-btn" onclick="editReserve('${r.id}')">✎</button>
-          <button class="action-btn del" onclick="deleteReserve('${r.id}','${r['שם']}')">✕</button>
+          <button class="action-btn" data-id="${escHtml(r.id)}" onclick="editReserve(this.dataset.id)">✎</button>
+          <button class="action-btn del" data-id="${escHtml(r.id)}" data-name="${escHtml(r['שם'])}" onclick="deleteReserve(this.dataset.id, this.dataset.name)">✕</button>
         </div>
-        <div class="reserve-name">${r['שם']}</div>
+        <div class="reserve-name">${escHtml(r['שם'])}</div>
         <div class="reserve-amount" style="color:${color}">₪${parseFloat(r['סכום']).toLocaleString()}</div>
-        <div class="reserve-desc">${r['תיאור'] || ''}</div>
+        <div class="reserve-desc">${escHtml(r['תיאור'] || '')}</div>
       </div>`;
   }).join('');
 
@@ -353,15 +367,15 @@ function openReserveModal(id) {
   document.querySelector('.modal-body').innerHTML = `
     <div class="form-row">
       <label>שם</label>
-      <input type="text" id="rsv-name" class="form-input" value="${r ? r['שם'] : ''}">
+      <input type="text" id="rsv-name" class="form-input" value="${escHtml(r ? r['שם'] : '')}">
     </div>
     <div class="form-row">
       <label>סכום (₪)</label>
-      <input type="number" id="rsv-amount" class="form-input" min="0" step="0.01" value="${r ? r['סכום'] : ''}">
+      <input type="number" id="rsv-amount" class="form-input" min="0" step="0.01" value="${escHtml(r ? r['סכום'] : '')}">
     </div>
     <div class="form-row">
       <label>תיאור</label>
-      <input type="text" id="rsv-desc" class="form-input" value="${r ? r['תיאור'] : ''}">
+      <input type="text" id="rsv-desc" class="form-input" value="${escHtml(r ? r['תיאור'] : '')}">
     </div>
   `;
   document.querySelector('.modal-footer').innerHTML = `
@@ -518,14 +532,14 @@ function renderJournal() {
     const badgeBg    = badgeColor + '22';
     return `<tr>
       <td>${r['תאריך']}</td>
-      <td><span class="supplier-dot" style="background:${color}"></span>${r['ספק']}</td>
-      <td style="color:#727272;font-size:12px">${r['מס_חשבונית'] || '—'}</td>
-      <td style="color:#727272">${r['תיאור'] || ''}</td>
+      <td><span class="supplier-dot" style="background:${color}"></span>${escHtml(r['ספק'])}</td>
+      <td style="color:#727272;font-size:12px">${escHtml(r['מס_חשבונית'] || '—')}</td>
+      <td style="color:#727272">${escHtml(r['תיאור'] || '')}</td>
       <td class="amount-cell">₪${parseFloat(r['סכום']).toLocaleString()}</td>
       <td><span class="status-badge" style="background:${badgeBg};color:${badgeColor}">${r['סטטוס']}</span></td>
       <td class="no-print"><div class="row-actions">
-        <button class="action-btn" onclick="openTransactionModal('${r.id}')">✎</button>
-        <button class="action-btn del" onclick="deleteTransaction('${r.id}','${r['ספק']}','${r['תאריך']}')">✕</button>
+        <button class="action-btn" data-id="${escHtml(r.id)}" onclick="openTransactionModal(this.dataset.id)">✎</button>
+        <button class="action-btn del" data-id="${escHtml(r.id)}" data-supplier="${escHtml(r['ספק'])}" data-date="${escHtml(r['תאריך'])}" onclick="deleteTransaction(this.dataset.id, this.dataset.supplier, this.dataset.date)">✕</button>
       </div></td>
     </tr>`;
   }).join('');
@@ -719,12 +733,12 @@ function renderSuppliersList() {
   document.getElementById('suppliers-list').innerHTML =
     APP.raw.suppliers.map(s => `
       <div class="manage-item">
-        <span>${s['שם']} ${s['פעיל'] === 'FALSE' ? '<em style="color:#8a8a8a;font-size:11px">(לא פעיל)</em>' : ''}</span>
+        <span>${escHtml(s['שם'])} ${s['פעיל'] === 'FALSE' ? '<em style="color:#8a8a8a;font-size:11px">(לא פעיל)</em>' : ''}</span>
         <div class="manage-item-actions">
-          <button class="action-btn" onclick="toggleSupplierActive('${s.id}','${s['שם']}','${s['פעיל']}')" title="${s['פעיל']==='TRUE'?'הסתר':'הפעל'}">
+          <button class="action-btn" data-id="${escHtml(s.id)}" data-name="${escHtml(s['שם'])}" data-active="${escHtml(s['פעיל'])}" onclick="toggleSupplierActive(this.dataset.id, this.dataset.name, this.dataset.active)" title="${s['פעיל']==='TRUE'?'הסתר':'הפעל'}">
             ${s['פעיל'] === 'TRUE' ? '○' : '●'}
           </button>
-          <button class="action-btn del" onclick="deleteSupplier('${s.id}','${s['שם']}')">✕</button>
+          <button class="action-btn del" data-id="${escHtml(s.id)}" data-name="${escHtml(s['שם'])}" onclick="deleteSupplier(this.dataset.id, this.dataset.name)">✕</button>
         </div>
       </div>`).join('');
 }
@@ -783,10 +797,10 @@ function renderStatusesList() {
     APP.raw.statuses.map(s => `
       <div class="manage-item">
         <span>
-          <span class="status-badge" style="background:${s['צבע']}22;color:${s['צבע']}">${s['שם']}</span>
+          <span class="status-badge" style="background:${s['צבע']}22;color:${s['צבע']}">${escHtml(s['שם'])}</span>
         </span>
         <div class="manage-item-actions">
-          <button class="action-btn del" onclick="deleteStatus('${s.id}','${s['שם']}')">✕</button>
+          <button class="action-btn del" data-id="${escHtml(s.id)}" data-name="${escHtml(s['שם'])}" onclick="deleteStatus(this.dataset.id, this.dataset.name)">✕</button>
         </div>
       </div>`).join('');
 }
@@ -829,13 +843,15 @@ function renderYearsList() {
   document.getElementById('years-list').innerHTML =
     APP.raw.budget.map(r => `
       <div class="year-manage-item">
-        <strong>${r['שנה']}</strong>
+        <strong>${escHtml(r['שנה'])}</strong>
         <span style="font-size:11px;color:#727272">תקציב:</span>
-        <input type="number" class="form-input" value="${r['תקציב_פתיחה']}"
-          onchange="updateYear('${r['שנה']}',this.value,'${r['חודש_סיום']}')">
+        <input type="number" class="form-input" value="${escHtml(r['תקציב_פתיחה'])}"
+          data-year="${escHtml(r['שנה'])}" data-endmonth="${escHtml(r['חודש_סיום'])}"
+          onchange="updateYear(this.dataset.year, this.value, this.dataset.endmonth)">
         <span style="font-size:11px;color:#727272">חודש סיום:</span>
-        <input type="number" class="form-input" style="width:60px" min="1" max="12" value="${r['חודש_סיום']}"
-          onchange="updateYear('${r['שנה']}','${r['תקציב_פתיחה']}',this.value)">
+        <input type="number" class="form-input" style="width:60px" min="1" max="12" value="${escHtml(r['חודש_סיום'])}"
+          data-year="${escHtml(r['שנה'])}" data-budget="${escHtml(r['תקציב_פתיחה'])}"
+          onchange="updateYear(this.dataset.year, this.dataset.budget, this.value)">
       </div>`).join('');
 }
 
