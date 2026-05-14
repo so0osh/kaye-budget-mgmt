@@ -6,9 +6,10 @@
 ## Goal
 
 A single `launch.bat` file that non-technical users double-click to:
-1. Check for a new GitHub release and auto-update if one exists
-2. Install Python dependencies on first run
-3. Start the app
+1. Install Python 3.12.7 silently if not found
+2. Check for a new GitHub release and auto-update if one exists
+3. Install Python dependencies on first run
+4. Start the app
 
 ## Script Format
 
@@ -43,6 +44,20 @@ On every launch:
    - Write `tag_name` to `version.txt`
    - Delete temp file and temp folder
 
+## Python Install (if missing)
+
+Before any other step, the script checks whether `python` is available on PATH:
+
+- Run `python --version`; if it succeeds, proceed
+- If not found:
+  1. Download `https://www.python.org/ftp/python/3.12.7/python-3.12.7-amd64.exe` to a temp file
+  2. Run silently: `python-3.12.7-amd64.exe /quiet InstallAllUsers=0 PrependPath=1 Include_launcher=1`
+  3. Wait for the installer to finish
+  4. Refresh PATH in the current session by reading `HKCU:\Environment` and `HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Environment` from the registry
+  5. Re-verify `python --version`; if still not found, print an error and exit
+
+Python is installed per-user (no admin rights required). It lands in `%LOCALAPPDATA%\Programs\Python\Python312\`.
+
 ## First-Run & Dependency Install
 
 After the update check (regardless of whether an update occurred):
@@ -72,4 +87,5 @@ The terminal window remains open while the app runs. Closing it stops the server
 - If `config.json` is missing or malformed → print a clear message and exit
 - If the GitHub API call fails (bad PAT, no network) → print a warning, skip update, proceed to launch
 - If the download or extraction fails → print a warning, skip update, proceed to launch
-- If Python is not found → print an install instruction and exit
+- If Python installer download fails → print an error and exit
+- If Python is still not found after silent install → print an error and exit
