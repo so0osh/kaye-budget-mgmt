@@ -105,7 +105,11 @@ def _setup_worker(set_status, set_error, close):
         # 2. Check for updates
         set_status("CHECKING FOR UPDATES")
         version_path = os.path.join(APP_DIR, "version.txt")
-        current = open(version_path).read().strip() if os.path.exists(version_path) else "none"
+        if os.path.exists(version_path):
+            with open(version_path) as f:
+                current = f.read().strip()
+        else:
+            current = "none"
         release, latest = None, None
         if pat:
             try:
@@ -132,7 +136,7 @@ def _setup_worker(set_status, set_error, close):
 
         if not os.path.exists(pip_exe):
             set_status("SETTING UP ENVIRONMENT")
-            subprocess.run([sys.executable, "-m", "venv", venv_path], check=True)
+            subprocess.run([sys.executable, "-m", "venv", "--clear", venv_path], check=True)
 
         # 5. Install / sync dependencies
         set_status("INSTALLING DEPENDENCIES")
@@ -142,18 +146,22 @@ def _setup_worker(set_status, set_error, close):
 
         # 6. Start Flask (no console window)
         set_status("STARTING SERVER")
+        extra = {"creationflags": CREATE_NO_WINDOW} if sys.platform == "win32" else {}
         subprocess.Popen(
             [py_exe, os.path.join(APP_DIR, "app.py")],
-            creationflags=CREATE_NO_WINDOW,
-            cwd=APP_DIR)
+            cwd=APP_DIR,
+            **extra)
 
         # 7. Poll until server responds (app.py opens the browser via its own Timer)
         set_status("WAITING FOR SERVER")
+        deadline = time.monotonic() + 60
         while True:
             try:
                 urllib.request.urlopen(SERVER_URL, timeout=1)
                 break
             except Exception:
+                if time.monotonic() > deadline:
+                    raise RuntimeError("Server did not start within 60 seconds")
                 time.sleep(0.3)
 
         close()
