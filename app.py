@@ -163,5 +163,5 @@ def create_app(config=None):
 
 if __name__ == '__main__':
     app = create_app()
-    threading.Timer(1.2, lambda: webbrowser.open('http://localhost:5000')).start()
-    app.run(port=5000, debug=False)
+    threading.Timer(1.2, lambda: webbrowser.open('http://localhost:13885')).start()
+    app.run(port=13885, debug=False)
