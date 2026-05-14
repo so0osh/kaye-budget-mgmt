@@ -308,3 +308,101 @@ function setBarMode(mode) {
   document.getElementById('btn-stacked').classList.toggle('active', stacked);
   document.getElementById('btn-grouped').classList.toggle('active', !stacked);
 }
+
+// ═══════════════════════════════════════════════════════
+// RESERVES
+// ═══════════════════════════════════════════════════════
+const RESERVE_COLORS = ['#cd3468','#e08c1a','#2bac76','#7c5cbf','#1594a0'];
+
+function renderReserves() {
+  const container = document.getElementById('reserves-container');
+  const reserves  = APP.raw.reserves.filter(r => r['שנה'] === APP.year);
+
+  const cards = reserves.map((r, i) => {
+    const color = RESERVE_COLORS[i % RESERVE_COLORS.length];
+    return `
+      <div class="reserve-card" style="border-top-color:${color}">
+        <div class="reserve-actions no-print">
+          <button class="action-btn" onclick="editReserve('${r.id}')">✎</button>
+          <button class="action-btn del" onclick="deleteReserve('${r.id}','${r['שם']}')">✕</button>
+        </div>
+        <div class="reserve-name">${r['שם']}</div>
+        <div class="reserve-amount" style="color:${color}">₪${parseFloat(r['סכום']).toLocaleString()}</div>
+        <div class="reserve-desc">${r['תיאור'] || ''}</div>
+      </div>`;
+  }).join('');
+
+  container.innerHTML = cards + `
+    <div class="reserve-card add-card no-print" onclick="openReserveModal(null)">
+      <span style="font-size:20px">＋</span> הוסף שמור
+    </div>`;
+}
+
+// Reserve modal reuses the transaction modal overlay with a separate form
+// injected dynamically (avoids adding another modal to the HTML)
+let _reserveEditId = null;
+
+function openReserveModal(id) {
+  _reserveEditId = id;
+  const r = id ? APP.raw.reserves.find(x => x.id === id) : null;
+
+  document.getElementById('modal-title').textContent = id ? 'עריכת שמור' : 'הוספת סכום שמור';
+  document.getElementById('modal-overlay').classList.remove('hidden');
+
+  // Temporarily swap modal body content for reserve form
+  document.querySelector('.modal-body').innerHTML = `
+    <div class="form-row">
+      <label>שם</label>
+      <input type="text" id="rsv-name" class="form-input" value="${r ? r['שם'] : ''}">
+    </div>
+    <div class="form-row">
+      <label>סכום (₪)</label>
+      <input type="number" id="rsv-amount" class="form-input" min="0" step="0.01" value="${r ? r['סכום'] : ''}">
+    </div>
+    <div class="form-row">
+      <label>תיאור</label>
+      <input type="text" id="rsv-desc" class="form-input" value="${r ? r['תיאור'] : ''}">
+    </div>
+  `;
+  document.querySelector('.modal-footer').innerHTML = `
+    <button class="btn btn-ghost" onclick="closeTransactionModal()">ביטול</button>
+    <button class="btn btn-primary" onclick="saveReserve()">שמור</button>
+  `;
+}
+
+async function saveReserve() {
+  const name   = document.getElementById('rsv-name').value.trim();
+  const amount = document.getElementById('rsv-amount').value;
+  const desc   = document.getElementById('rsv-desc').value.trim();
+  if (!name || !amount) return;
+
+  const row = { id: _reserveEditId || String(Date.now()), שנה: APP.year, שם: name, סכום: amount, תיאור: desc };
+  const action = _reserveEditId ? 'update' : 'create';
+
+  await fetch('/api/reserve', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ action, row }) });
+
+  if (action === 'create') {
+    APP.raw.reserves.push(row);
+  } else {
+    const idx = APP.raw.reserves.findIndex(x => x.id === row.id);
+    if (idx >= 0) APP.raw.reserves[idx] = row;
+  }
+
+  closeTransactionModal();
+  renderReserves();
+  renderKPIs();
+}
+
+function editReserve(id) { openReserveModal(id); }
+
+function deleteReserve(id, name) {
+  APP.pendingDelete = async () => {
+    await fetch('/api/reserve', { method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ action: 'delete', id }) });
+    APP.raw.reserves = APP.raw.reserves.filter(r => r.id !== id);
+    renderReserves();
+    renderKPIs();
+  };
+  document.getElementById('confirm-message').textContent = `למחוק את "${name}"?`;
+  document.getElementById('confirm-overlay').classList.remove('hidden');
+}
