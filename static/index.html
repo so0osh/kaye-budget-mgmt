@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ניהול תקציב פרסום</title>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<!-- ═══════════ HEADER ═══════════ -->
+<header class="app-header">
+  <div class="header-brand">
+    <div class="header-logo">ק</div>
+    <div>
+      <div class="header-title">ניהול תקציב פרסום</div>
+      <div class="header-subtitle">מדור רישום — מכללת קיי</div>
+    </div>
+  </div>
+  <div class="header-actions no-print">
+    <select id="year-select" class="year-select"></select>
+    <button class="btn btn-ghost" onclick="window.print()">🖨 הדפסה</button>
+    <button class="btn btn-ghost" onclick="openSettings()">⚙ הגדרות</button>
+    <button class="btn btn-primary" onclick="openTransactionModal(null)">+ הוסף תנועה</button>
+  </div>
+</header>
+
+<div class="page">
+
+  <!-- ═══════════ KPI CARDS ═══════════ -->
+  <div class="section-title">סיכום תקציבי</div>
+  <div id="kpi-grid" class="kpi-grid"></div>
+
+  <!-- ═══════════ CHARTS ═══════════ -->
+  <div class="section-title">גרפים</div>
+  <div class="charts-row">
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">הוצאות חודשיות לפי ספק</div>
+          <div id="bar-legend" class="chart-legend"></div>
+        </div>
+        <div class="view-toggle no-print">
+          <button class="view-toggle-btn active" id="btn-stacked" onclick="setBarMode('stacked')">מוערם</button>
+          <button class="view-toggle-btn" id="btn-grouped" onclick="setBarMode('grouped')">זה לצד זה</button>
+        </div>
+      </div>
+      <canvas id="bar-chart"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-header">
+        <div class="chart-title">התפלגות לפי ספק</div>
+      </div>
+      <canvas id="pie-chart"></canvas>
+    </div>
+  </div>
+
+  <!-- ═══════════ RESERVES ═══════════ -->
+  <div class="section-title">סכומים שמורים</div>
+  <div id="reserves-container" class="reserves-row"></div>
+
+  <!-- ═══════════ JOURNAL ═══════════ -->
+  <div class="section-title">יומן תנועות</div>
+  <div class="journal-card">
+    <div class="journal-header">
+      <div class="month-carousel no-print">
+        <button class="carousel-arrow" onclick="scrollCarousel(-1)">›</button>
+        <div id="month-pills" class="month-pills"></div>
+        <button class="carousel-arrow" onclick="scrollCarousel(1)">‹</button>
+      </div>
+      <div class="no-print" style="display:flex;gap:8px">
+        <button class="btn btn-ghost" style="font-size:12px" onclick="printJournal()">🖨 הדפס</button>
+        <button class="btn btn-outline" style="font-size:12px" onclick="openTransactionModal(null)">+ תנועה חדשה</button>
+      </div>
+    </div>
+    <div class="journal-filters no-print">
+      <span class="filter-label">סינון:</span>
+      <select id="filter-supplier" class="filter-select" onchange="applyFilters()">
+        <option value="">כל הספקים</option>
+      </select>
+      <select id="filter-status" class="filter-select" onchange="applyFilters()">
+        <option value="">כל הסטטוסים</option>
+      </select>
+      <button class="btn btn-ghost" style="font-size:12px;padding:4px 10px" onclick="clearFilters()">✕ נקה</button>
+    </div>
+    <table class="journal-table">
+      <thead>
+        <tr>
+          <th>תאריך</th>
+          <th>ספק</th>
+          <th>מס׳ חשבונית</th>
+          <th>תיאור</th>
+          <th>סכום</th>
+          <th>סטטוס</th>
+          <th class="no-print"></th>
+        </tr>
+      </thead>
+      <tbody id="journal-tbody"></tbody>
+    </table>
+    <div class="journal-footer">
+      <div id="journal-count" style="font-size:12px;color:#727272"></div>
+      <div class="journal-footer-total">סה״כ: <strong id="journal-total"></strong></div>
+    </div>
+  </div>
+
+</div><!-- /page -->
+
+<!-- ═══════════ TRANSACTION MODAL ═══════════ -->
+<div id="modal-overlay" class="modal-overlay hidden" onclick="closeModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <span id="modal-title">הוספת תנועה</span>
+      <button class="modal-close" onclick="closeTransactionModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="txn-id">
+      <div class="form-row">
+        <label>תאריך</label>
+        <input type="date" id="txn-date" class="form-input">
+      </div>
+      <div class="form-row">
+        <label>ספק <button class="link-btn no-print" onclick="openManageSuppliers()">נהל ספקים</button></label>
+        <select id="txn-supplier" class="form-input"></select>
+      </div>
+      <div class="form-row">
+        <label>מס׳ חשבונית</label>
+        <input type="text" id="txn-invoice" class="form-input" placeholder="מספר חשבונית">
+      </div>
+      <div class="form-row">
+        <label>תיאור</label>
+        <input type="text" id="txn-description" class="form-input" placeholder="תיאור (אופציונלי)">
+      </div>
+      <div class="form-row">
+        <label>סכום (₪)</label>
+        <input type="number" id="txn-amount" class="form-input" min="0" step="0.01" placeholder="0.00">
+      </div>
+      <div class="form-row">
+        <label>סטטוס <button class="link-btn no-print" onclick="openManageStatuses()">נהל סטטוסים</button></label>
+        <select id="txn-status" class="form-input"></select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeTransactionModal()">ביטול</button>
+      <button class="btn btn-primary" onclick="saveTransaction()">שמור</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ MANAGE SUPPLIERS MODAL ═══════════ -->
+<div id="suppliers-modal" class="modal-overlay hidden" onclick="closeModal(event)">
+  <div class="modal modal-sm" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <span>ניהול ספקים</span>
+      <button class="modal-close" onclick="closeManageSuppliers()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="suppliers-list"></div>
+      <div class="add-row">
+        <input type="text" id="new-supplier-name" class="form-input" placeholder="שם ספק חדש">
+        <button class="btn btn-primary btn-sm" onclick="addSupplier()">הוסף</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ MANAGE STATUSES MODAL ═══════════ -->
+<div id="statuses-modal" class="modal-overlay hidden" onclick="closeModal(event)">
+  <div class="modal modal-sm" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <span>ניהול סטטוסים</span>
+      <button class="modal-close" onclick="closeManageStatuses()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="statuses-list"></div>
+      <div class="add-row">
+        <input type="text" id="new-status-name" class="form-input" placeholder="שם סטטוס חדש">
+        <input type="color" id="new-status-color" value="#1594a0" style="width:36px;height:36px;border:none;cursor:pointer;border-radius:6px;">
+        <button class="btn btn-primary btn-sm" onclick="addStatus()">הוסף</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ SETTINGS PANEL ═══════════ -->
+<div id="settings-overlay" class="modal-overlay hidden" onclick="closeSettings(event)">
+  <div class="settings-panel" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <span>הגדרות</span>
+      <button class="modal-close" onclick="closeSettings()">✕</button>
+    </div>
+    <div class="modal-body">
+      <h3 class="settings-section-title">שנים תקציביות</h3>
+      <div id="years-list"></div>
+      <div class="add-row" style="margin-top:12px">
+        <input type="text" id="new-year-str" class="form-input" placeholder="2026/2027">
+        <input type="number" id="new-year-budget" class="form-input" placeholder="תקציב פתיחה (₪)" min="0">
+        <input type="number" id="new-year-endmonth" class="form-input" placeholder="חודש סיום (1-12)" min="1" max="12" value="8">
+        <button class="btn btn-primary btn-sm" onclick="addYear()">הוסף</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ DELETE CONFIRM ═══════════ -->
+<div id="confirm-overlay" class="modal-overlay hidden" onclick="cancelDelete()">
+  <div class="modal modal-xs" onclick="event.stopPropagation()">
+    <div class="modal-body" style="text-align:center;padding:28px">
+      <div style="font-size:16px;font-weight:700;margin-bottom:8px">מחיקת רשומה</div>
+      <div id="confirm-message" style="color:#727272;margin-bottom:20px"></div>
+      <div style="display:flex;gap:10px;justify-content:center">
+        <button class="btn btn-ghost" onclick="cancelDelete()">ביטול</button>
+        <button class="btn" style="background:#cd3468;color:#fff" onclick="confirmDelete()">מחק</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="/app.js"></script>
+</body>
+</html>
