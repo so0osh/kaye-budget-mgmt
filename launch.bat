@@ -130,4 +130,6 @@ try {
 
 # ── 5. Launch ─────────────────────────────────────────────────────────────────
 Write-Host "Launching app..." -ForegroundColor Cyan
-& (Join-Path $VenvPath "Scripts\python.exe") (Join-Path $AppDir "app.py")
+$PythonExe = Join-Path $VenvPath "Scripts\python.exe"
+Start-Process -FilePath $PythonExe -ArgumentList (Join-Path $AppDir "app.py") -NoNewWindow
+& $PythonExe (Join-Path $AppDir "splash.py")
