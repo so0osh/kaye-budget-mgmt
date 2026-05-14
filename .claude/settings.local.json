@@ -30,7 +30,25 @@
       "PowerShell(Out-Null *)",
       "PowerShell($token = \"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\"; $headers = @{ Authorization = \"token $token\"; Accept = \"application/vnd.github+json\" }; $body = @{ name = \"kaye-budget-mgmt\"; private = $true; description = \"Advertising budget management app backed by Google Sheets\" } | ConvertTo-Json; $resp = Invoke-RestMethod -Method Post -Uri \"https://api.github.com/user/repos\" -Headers $headers -Body $body -ContentType \"application/json\"; $resp.html_url)",
       "PowerShell($token = \"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\"; $headers = @{ Authorization = \"token $token\"; Accept = \"application/vnd.github+json\" }; $body = @{ tag_name = \"v1.0.0\"; name = \"v1.0.0 — Initial Release\"; body = \"First release of kaye-budget-mgmt.`n`nIncludes:`n- Flask REST API backed by Google Sheets`n- Transactions, reserves, suppliers, statuses, and budget year management`n- Single-page frontend \\(HTML/CSS/JS\\)`n- pytest test suite`n- Full installation guide \\(README.md\\)\"; draft = $false; prerelease = $false } | ConvertTo-Json; $resp = Invoke-RestMethod -Method Post -Uri \"https://api.github.com/repos/so0osh/kaye-budget-mgmt/releases\" -Headers $headers -Body $body -ContentType \"application/json\"; $resp.html_url)",
-      "Bash(git show *)"
+      "Bash(git show *)",
+      "PowerShell($token = \"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\"; $headers = @{ Authorization = \"token $token\"; Accept = \"application/vnd.github+json\" }; $body = '{\"tag_name\":\"v1.0.2\",\"name\":\"v1.0.2\",\"body\":\"- Track docs/superpowers/ and .claude/ in git\\\\n- Add .gitattributes: exclude dev paths from release archives \\(export-ignore\\)\",\"draft\":false,\"prerelease\":false}'; $resp = Invoke-RestMethod -Method Post -Uri \"https://api.github.com/repos/so0osh/kaye-budget-mgmt/releases\" -Headers $headers -Body $body -ContentType \"application/json\"; $resp.html_url)",
+      "Skill(superpowers:brainstorming)",
+      "Skill(superpowers:writing-plans)",
+      "Skill(superpowers:subagent-driven-development)",
+      "Bash(findstr /i config)",
+      "Skill(code-review:code-review)",
+      "Bash(sed -n '88,100p' C:/repos/kaye-budget-mgmt/launch.bat)",
+      "Bash(powershell -Command \"Get-Content C:\\\\repos\\\\kaye-budget-mgmt\\\\launch.bat | Select-Object -Skip 88 -First 15\")",
+      "Bash(powershell *)",
+      "Bash(gh release *)",
+      "Skill(canvas-design)",
+      "Bash(python *)",
+      "Bash(pip install *)",
+      "PowerShell(python -c \"from PIL import Image; print\\('PIL OK'\\)\")",
+      "PowerShell(python \"C:\\\\repos\\\\kaye-budget-mgmt\\\\generate_icon.py\" 2>&1)",
+      "PowerShell(Start-Process python -ArgumentList \"C:\\\\repos\\\\kaye-budget-mgmt\\\\splash.py\" -PassThru | ForEach-Object { Start-Sleep 4; $_.Kill\\(\\); Write-Host \"splash closed\" })",
+      "Bash(gh run *)",
+      "Bash(pytest *)"
     ]
   }
 }
