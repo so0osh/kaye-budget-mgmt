@@ -536,7 +536,7 @@ function renderJournal() {
       <td style="color:#727272;font-size:12px">${escHtml(r['מס_חשבונית'] || '—')}</td>
       <td style="color:#727272">${escHtml(r['תיאור'] || '')}</td>
       <td class="amount-cell">₪${parseFloat(r['סכום']).toLocaleString()}</td>
-      <td><span class="status-badge" style="background:${badgeBg};color:${badgeColor}">${r['סטטוס']}</span></td>
+      <td><span class="status-badge" style="background:${badgeBg};color:${badgeColor}">${escHtml(r['סטטוס'])}</span></td>
       <td class="no-print"><div class="row-actions">
         <button class="action-btn" data-id="${escHtml(r.id)}" onclick="openTransactionModal(this.dataset.id)">✎</button>
         <button class="action-btn del" data-id="${escHtml(r.id)}" data-supplier="${escHtml(r['ספק'])}" data-date="${escHtml(r['תאריך'])}" onclick="deleteTransaction(this.dataset.id, this.dataset.supplier, this.dataset.date)">✕</button>
