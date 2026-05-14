@@ -6,6 +6,7 @@
   <title>ניהול תקציב פרסום</title>
   <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 </head>
 <body>
 
@@ -195,7 +196,7 @@
       <div class="add-row" style="margin-top:12px">
         <input type="text" id="new-year-str" class="form-input" placeholder="2026/2027">
         <input type="number" id="new-year-budget" class="form-input" placeholder="תקציב פתיחה (₪)" min="0">
-        <input type="number" id="new-year-endmonth" class="form-input" placeholder="חודש סיום (1-12)" min="1" max="12" value="8">
+        <input type="number" id="new-year-endmonth" class="form-input" placeholder="חודש סיום (1-12)" min="1" max="12">
         <button class="btn btn-primary btn-sm" onclick="addYear()">הוסף</button>
       </div>
     </div>
@@ -217,6 +218,8 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/he.js"></script>
 <script src="/app.js"></script>
 </body>
 </html>

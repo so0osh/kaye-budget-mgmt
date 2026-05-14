@@ -588,7 +588,7 @@ function _restoreTransactionForm() {
     <input type="hidden" id="txn-id">
     <div class="form-row">
       <label>תאריך</label>
-      <input type="date" id="txn-date" class="form-input">
+      <input type="text" id="txn-date" class="form-input" placeholder="dd/mm/yyyy" readonly>
     </div>
     <div class="form-row">
       <label>ספק <button class="link-btn no-print" onclick="openManageSuppliers()">נהל ספקים</button></label>
@@ -620,6 +620,12 @@ function _restoreTransactionForm() {
 function openTransactionModal(id) {
   _restoreTransactionForm();
 
+  const fp = flatpickr('#txn-date', {
+    locale: 'he',
+    dateFormat: 'd/m/Y',
+    disableMobile: true,
+  });
+
   const overlay = document.getElementById('modal-overlay');
   overlay.classList.remove('hidden');
 
@@ -638,7 +644,7 @@ function openTransactionModal(id) {
     const r = APP.raw.transactions.find(t => t.id === id);
     document.getElementById('modal-title').textContent = 'עריכת תנועה';
     document.getElementById('txn-id').value          = r.id;
-    document.getElementById('txn-date').value        = isoDate(r['תאריך']);
+    fp.setDate(r['תאריך'], false, 'd/m/Y');
     document.getElementById('txn-supplier').value    = r['ספק'];
     document.getElementById('txn-invoice').value     = r['מס_חשבונית'];
     document.getElementById('txn-description').value = r['תיאור'];
@@ -646,21 +652,10 @@ function openTransactionModal(id) {
     document.getElementById('txn-status').value      = r['סטטוס'];
   } else {
     document.getElementById('modal-title').textContent = 'הוספת תנועה';
-    document.getElementById('txn-date').value = new Date().toISOString().slice(0,10);
+    fp.setDate(new Date(), true);
   }
 }
 
-// Convert DD/MM/YYYY → YYYY-MM-DD for date input
-function isoDate(ddmmyyyy) {
-  const [d, m, y] = ddmmyyyy.split('/');
-  return `${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`;
-}
-
-// Convert YYYY-MM-DD → DD/MM/YYYY for storage
-function heDate(iso) {
-  const [y, m, d] = iso.split('-');
-  return `${d}/${m}/${y}`;
-}
 
 async function saveTransaction() {
   const id      = document.getElementById('txn-id').value;
@@ -671,7 +666,7 @@ async function saveTransaction() {
   const row = {
     id:          id || String(Date.now()),
     שנה:         APP.year,
-    תאריך:       heDate(dateVal),
+    תאריך:       dateVal,
     ספק:         document.getElementById('txn-supplier').value,
     מס_חשבונית: document.getElementById('txn-invoice').value.trim(),
     תיאור:       document.getElementById('txn-description').value.trim(),
