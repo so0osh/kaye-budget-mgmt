@@ -18,18 +18,17 @@ jobs:
 
       - name: Create release zip
         run: |
-          zip -r kaye-budget-mgmt.zip . \
-            --exclude ".git/*" \
-            --exclude ".github/*" \
-            --exclude "docs/*" \
-            --exclude ".claude/*" \
-            --exclude "node_modules/*" \
-            --exclude ".venv/*" \
-            --exclude "__pycache__/*" \
-            --exclude "*.pyc" \
-            --exclude "*.pyo" \
-            --exclude ".gitignore" \
-            --exclude ".gitattributes"
+          zip kaye-budget-mgmt.zip \
+            app.py \
+            sheets.py \
+            requirements.txt \
+            launch.bat \
+            splash.py \
+            icon.png \
+            launch.ico \
+            version.txt \
+            config.template.json
+          zip -r kaye-budget-mgmt.zip static/
 
       - name: Upload release asset
         run: gh release upload "${{ github.event.release.tag_name }}" kaye-budget-mgmt.zip --clobber
