@@ -23,7 +23,8 @@ jobs:
             sheets.py \
             requirements.txt \
             launch.bat \
-            splash.py \
+            launch.vbs \
+            launcher.py \
             icon.png \
             launch.ico \
             version.txt \

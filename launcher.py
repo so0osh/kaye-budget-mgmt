@@ -22,7 +22,7 @@ try:
 except ImportError:
     PIL_OK = False
 
-APP_DIR    = os.path.dirname(os.path.abspath(sys.argv[0]))
+APP_DIR    = os.path.dirname(os.path.abspath(__file__))
 SERVER_URL = "http://localhost:13885"
 QUEUE_MS   = 100
 REPO       = "so0osh/kaye-budget-mgmt"
