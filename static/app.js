@@ -565,3 +565,132 @@ function cancelDelete() {
   APP.pendingDelete = null;
   document.getElementById('confirm-overlay').classList.add('hidden');
 }
+
+// ═══════════════════════════════════════════════════════
+// TRANSACTION MODAL
+// ═══════════════════════════════════════════════════════
+function _restoreTransactionForm() {
+  document.querySelector('.modal-body').innerHTML = `
+    <input type="hidden" id="txn-id">
+    <div class="form-row">
+      <label>תאריך</label>
+      <input type="date" id="txn-date" class="form-input">
+    </div>
+    <div class="form-row">
+      <label>ספק <button class="link-btn no-print" onclick="openManageSuppliers()">נהל ספקים</button></label>
+      <select id="txn-supplier" class="form-input"></select>
+    </div>
+    <div class="form-row">
+      <label>מס׳ חשבונית</label>
+      <input type="text" id="txn-invoice" class="form-input" placeholder="מספר חשבונית">
+    </div>
+    <div class="form-row">
+      <label>תיאור</label>
+      <input type="text" id="txn-description" class="form-input" placeholder="תיאור (אופציונלי)">
+    </div>
+    <div class="form-row">
+      <label>סכום (₪)</label>
+      <input type="number" id="txn-amount" class="form-input" min="0" step="0.01">
+    </div>
+    <div class="form-row">
+      <label>סטטוס <button class="link-btn no-print" onclick="openManageStatuses()">נהל סטטוסים</button></label>
+      <select id="txn-status" class="form-input"></select>
+    </div>
+  `;
+  document.querySelector('.modal-footer').innerHTML = `
+    <button class="btn btn-ghost" onclick="closeTransactionModal()">ביטול</button>
+    <button class="btn btn-primary" onclick="saveTransaction()">שמור</button>
+  `;
+}
+
+function openTransactionModal(id) {
+  _restoreTransactionForm();
+
+  const overlay = document.getElementById('modal-overlay');
+  overlay.classList.remove('hidden');
+
+  // Populate supplier dropdown
+  const supSel = document.getElementById('txn-supplier');
+  supSel.innerHTML = APP.raw.suppliers
+    .filter(s => s['פעיל'] === 'TRUE')
+    .map(s => `<option value="${s['שם']}">${s['שם']}</option>`).join('');
+
+  // Populate status dropdown
+  const stSel = document.getElementById('txn-status');
+  stSel.innerHTML = APP.raw.statuses
+    .map(s => `<option value="${s['שם']}">${s['שם']}</option>`).join('');
+
+  if (id) {
+    const r = APP.raw.transactions.find(t => t.id === id);
+    document.getElementById('modal-title').textContent = 'עריכת תנועה';
+    document.getElementById('txn-id').value          = r.id;
+    document.getElementById('txn-date').value        = isoDate(r['תאריך']);
+    document.getElementById('txn-supplier').value    = r['ספק'];
+    document.getElementById('txn-invoice').value     = r['מס_חשבונית'];
+    document.getElementById('txn-description').value = r['תיאור'];
+    document.getElementById('txn-amount').value      = r['סכום'];
+    document.getElementById('txn-status').value      = r['סטטוס'];
+  } else {
+    document.getElementById('modal-title').textContent = 'הוספת תנועה';
+    document.getElementById('txn-date').value = new Date().toISOString().slice(0,10);
+  }
+}
+
+// Convert DD/MM/YYYY → YYYY-MM-DD for date input
+function isoDate(ddmmyyyy) {
+  const [d, m, y] = ddmmyyyy.split('/');
+  return `${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`;
+}
+
+// Convert YYYY-MM-DD → DD/MM/YYYY for storage
+function heDate(iso) {
+  const [y, m, d] = iso.split('-');
+  return `${d}/${m}/${y}`;
+}
+
+async function saveTransaction() {
+  const id      = document.getElementById('txn-id').value;
+  const dateVal = document.getElementById('txn-date').value;
+  const amount  = document.getElementById('txn-amount').value;
+  if (!dateVal || !amount) return;
+
+  const row = {
+    id:          id || String(Date.now()),
+    שנה:         APP.year,
+    תאריך:       heDate(dateVal),
+    ספק:         document.getElementById('txn-supplier').value,
+    מס_חשבונית: document.getElementById('txn-invoice').value.trim(),
+    תיאור:       document.getElementById('txn-description').value.trim(),
+    סכום:        amount,
+    סטטוס:       document.getElementById('txn-status').value,
+  };
+  const action = id ? 'update' : 'create';
+
+  await fetch('/api/transaction', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ action, row }),
+  });
+
+  if (action === 'create') {
+    APP.raw.transactions.push(row);
+  } else {
+    const idx = APP.raw.transactions.findIndex(t => t.id === row.id);
+    if (idx >= 0) APP.raw.transactions[idx] = row;
+  }
+
+  closeTransactionModal();
+  render();
+}
+
+function closeTransactionModal() {
+  document.getElementById('modal-overlay').classList.add('hidden');
+  _reserveEditId = null;
+}
+
+function closeModal(event) {
+  if (event.target === document.getElementById('modal-overlay')) closeTransactionModal();
+  if (event.target === document.getElementById('suppliers-modal')) closeManageSuppliers();
+  if (event.target === document.getElementById('statuses-modal')) closeManageStatuses();
+  if (event.target === document.getElementById('settings-overlay')) closeSettings();
+}
