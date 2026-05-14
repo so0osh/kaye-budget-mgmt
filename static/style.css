@@ -292,5 +292,7 @@ body {
   .page { padding: 0; }
   .chart-card, .journal-card, .kpi-card, .reserve-card { box-shadow: none; border: 1px solid #e2e2e2; }
   .journal-table td, .journal-table th { padding: 8px 10px; }
-  .journal-table .action-btn { display: none; }
+  .row-actions { display: none; }
+  .journal-table tr td, .journal-table tr:hover td,
+  .journal-table .confirm-row td { background: #fff !important; }
 }
