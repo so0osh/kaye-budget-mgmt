@@ -18,7 +18,7 @@ A lightweight web app for tracking advertising spend against a Google Sheets spr
 
 ### 1. Download the latest release
 
-Go to the [Releases page](../../releases/latest) and download the zip archive, then extract it to a folder of your choice.
+Go to the [Releases page](https://github.com/so0osh/kaye-budget-mgmt/releases/latest) and download the zip archive, then extract it to a folder of your choice.
 
 #### For developers — clone instead
 
@@ -29,31 +29,32 @@ git clone <repo-url>
 cd kaye-budget-mgmt
 ```
 
-### 2. Create a Python virtual environment
+### 2. Copy and fill in `config.json`
 
-```bash
-python -m venv .venv
+Copy `config.template.json` to `config.json` and fill in both fields:
 
-# Windows
-.venv\Scripts\activate
-
-# macOS / Linux
-source .venv/bin/activate
+```json
+{
+  "spreadsheet_id": "YOUR_SPREADSHEET_ID_HERE",
+  "github_pat":     "YOUR_GITHUB_PAT_HERE"
+}
 ```
 
-### 3. Install Python dependencies
+`github_pat` is a GitHub fine-grained personal access token with **Contents: Read-only** access to this repository. Create one at GitHub → Settings → Developer settings → Personal access tokens → Fine-grained tokens.
 
-```bash
-pip install -r requirements.txt
-```
+> **Important:** Never commit `config.json` — it contains your credentials. It is listed in `.gitignore` to prevent accidental commits.
 
-### 4. (Optional) Install JS dependencies
+### 3. Add `credentials.json`
 
-Only needed if you use the xlsx import utility.
+Place your Google service-account key file (named `credentials.json`) in the same folder.
 
-```bash
-npm install
-```
+### 4. Double-click `launch.bat`
+
+The launcher will automatically:
+- Install Python 3.12.7 if not already installed (no admin rights required)
+- Download and apply any newer release from GitHub
+- Set up the Python virtual environment on first run
+- Open the app in your browser at `http://localhost:13885`
 
 ---
 
@@ -102,7 +103,7 @@ Open `config.json` and paste the spreadsheet ID (the long string in the Google S
 python app.py
 ```
 
-The app starts on `http://localhost:5000` and opens a browser tab automatically.
+The app starts on `http://localhost:13885` and opens a browser tab automatically.
 
 On first run, `sheets.seed_sheets()` writes headers and default data (suppliers, statuses, a sample budget year) to any empty tabs.
 
@@ -121,18 +122,20 @@ Tests use a Flask test client with `TESTING=True` so no Google Sheets connection
 ## Project Structure
 
 ```
-app.py              Flask app + REST API routes
-sheets.py           Google Sheets read/write/delete helpers
-config.json         Spreadsheet ID (fill in before first run)
-credentials.json    Service-account key (never commit — add to .gitignore)
-requirements.txt    Python dependencies
+app.py                 Flask app + REST API routes
+sheets.py              Google Sheets read/write/delete helpers
+config.template.json   Template for config.json (check in, users copy to config.json)
+config.json            Spreadsheet ID and GitHub PAT (never commit — .gitignore)
+credentials.json       Service-account key (never commit — .gitignore)
+requirements.txt       Python dependencies
+launch.bat             Windows launcher for non-technical users
 static/
-  index.html        Single-page application shell
-  style.css         Styles
-  app.js            Frontend logic
+  index.html           Single-page application shell
+  style.css            Styles
+  app.js               Frontend logic
 tests/
-  conftest.py       Pytest fixtures
-  test_api.py       API integration tests
+  conftest.py          Pytest fixtures
+  test_api.py          API integration tests
 ```
 
 ---
@@ -142,6 +145,6 @@ tests/
 | File | Description |
 |------|-------------|
 | `credentials.json` | Google service-account private key |
-| `config.json` | Contains the live spreadsheet ID |
+| `config.json` | Contains the live spreadsheet ID and GitHub PAT |
 
-Make sure both are listed in `.gitignore`.
+Make sure both are listed in `.gitignore`. Use `config.template.json` as a reference for the required fields in `config.json`.
