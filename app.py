@@ -32,7 +32,7 @@ def create_app(config=None):
     @app.route('/api/transaction', methods=['POST'])
     def transaction():
         try:
-            body = request.get_json()
+            body = request.get_json(silent=True)
             if body is None:
                 return jsonify({'ok': False, 'error': 'Request body must be valid JSON'}), 400
             action = body.get('action')
@@ -68,7 +68,7 @@ def create_app(config=None):
     @app.route('/api/reserve', methods=['POST'])
     def reserve():
         try:
-            body = request.get_json()
+            body = request.get_json(silent=True)
             if body is None:
                 return jsonify({'ok': False, 'error': 'Request body must be valid JSON'}), 400
             action = body.get('action')
@@ -105,7 +105,7 @@ def create_app(config=None):
                     'budget':    sheets._read_sheet('budget'),
                 })
 
-            body = request.get_json()
+            body = request.get_json(silent=True)
             if body is None:
                 return jsonify({'ok': False, 'error': 'Request body must be valid JSON'}), 400
             sheet_key = body['type']
