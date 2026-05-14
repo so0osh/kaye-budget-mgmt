@@ -104,12 +104,20 @@ if ($latestTag) {
     }
 }
 
-# ── 4. Create venv + install deps (first run) ─────────────────────────────────
-if (-not (Test-Path $VenvPath)) {
-    Write-Host "First run - setting up virtual environment..."
-    & python -m venv $VenvPath
-    & (Join-Path $VenvPath "Scripts\pip.exe") install -r (Join-Path $AppDir "requirements.txt")
-    Write-Host "Dependencies installed." -ForegroundColor Green
+# ── 4. Create venv + install deps ────────────────────────────────────────────
+try {
+    if (-not (Test-Path $VenvPath)) {
+        Write-Host "First run - setting up virtual environment..."
+        & python -m venv $VenvPath
+        if (-not (Test-Path (Join-Path $VenvPath "Scripts\pip.exe"))) {
+            throw "venv creation failed — pip.exe not found"
+        }
+    }
+    & (Join-Path $VenvPath "Scripts\pip.exe") install -r (Join-Path $AppDir "requirements.txt") --quiet
+    Write-Host "Dependencies ready." -ForegroundColor Green
+} catch {
+    Write-Host "ERROR: Dependency setup failed: $_" -ForegroundColor Red
+    pause; exit 1
 }
 
 # ── 5. Launch ─────────────────────────────────────────────────────────────────
