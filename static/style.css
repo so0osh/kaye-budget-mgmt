@@ -81,13 +81,13 @@ body {
 .kpi-card {
   background: #fff; border-radius: 12px; padding: 18px 20px;
   box-shadow: 0 1px 4px rgba(0,0,0,0.07);
-  border-right: 4px solid transparent; transition: box-shadow 0.15s;
+  border-inline-start: 4px solid transparent; transition: box-shadow 0.15s;
 }
 .kpi-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.10); }
-.kpi-card.teal  { border-right-color: #1594a0; }
-.kpi-card.pink  { border-right-color: #cd3468; }
-.kpi-card.green { border-right-color: #2bac76; }
-.kpi-card.amber { border-right-color: #e08c1a; }
+.kpi-card.teal  { border-inline-start-color: #1594a0; }
+.kpi-card.pink  { border-inline-start-color: #cd3468; }
+.kpi-card.green { border-inline-start-color: #2bac76; }
+.kpi-card.amber { border-inline-start-color: #e08c1a; }
 .kpi-label { font-size: 11px; color: #727272; font-weight: 500; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 6px; }
 .kpi-value { font-size: 24px; font-weight: 800; line-height: 1.1; }
 .kpi-value small { font-size: 13px; font-weight: 500; color: #727272; margin-right: 3px; }
@@ -144,7 +144,7 @@ body {
 .reserve-name   { font-size: 12px; font-weight: 600; color: #727272; margin-bottom: 4px; }
 .reserve-amount { font-size: 20px; font-weight: 800; color: #cd3468; }
 .reserve-desc   { font-size: 11px; color: #8a8a8a; margin-top: 4px; }
-.reserve-actions { position: absolute; top: 10px; left: 12px; display: flex; gap: 4px; }
+.reserve-actions { position: absolute; top: 10px; inset-inline-end: 12px; display: flex; gap: 4px; }
 
 /* ── Journal ── */
 .journal-card { background: #fff; border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.07); overflow: hidden; }
@@ -200,7 +200,7 @@ body {
 .journal-table tr:hover td { background: #f6fafd; }
 .journal-table .confirm-row td { background: #fce8ee; }
 
-.amount-cell   { font-weight: 700; font-size: 14px; direction: ltr; text-align: left; white-space: nowrap; }
+.amount-cell   { font-weight: 700; font-size: 14px; direction: ltr; text-align: end; white-space: nowrap; }
 .supplier-dot  { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-left: 6px; }
 .status-badge  { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
 .row-actions   { display: flex; gap: 6px; }

@@ -111,32 +111,32 @@
   <div class="modal" onclick="event.stopPropagation()">
     <div class="modal-header">
       <span id="modal-title">הוספת תנועה</span>
-      <button class="modal-close" onclick="closeTransactionModal()">✕</button>
+      <button class="modal-close" aria-label="סגור" onclick="closeTransactionModal()">✕</button>
     </div>
     <div class="modal-body">
       <input type="hidden" id="txn-id">
       <div class="form-row">
-        <label>תאריך</label>
+        <label for="txn-date">תאריך</label>
         <input type="date" id="txn-date" class="form-input">
       </div>
       <div class="form-row">
-        <label>ספק <button class="link-btn no-print" onclick="openManageSuppliers()">נהל ספקים</button></label>
+        <label for="txn-supplier">ספק <button class="link-btn no-print" onclick="openManageSuppliers()">נהל ספקים</button></label>
         <select id="txn-supplier" class="form-input"></select>
       </div>
       <div class="form-row">
-        <label>מס׳ חשבונית</label>
+        <label for="txn-invoice">מס׳ חשבונית</label>
         <input type="text" id="txn-invoice" class="form-input" placeholder="מספר חשבונית">
       </div>
       <div class="form-row">
-        <label>תיאור</label>
+        <label for="txn-description">תיאור</label>
         <input type="text" id="txn-description" class="form-input" placeholder="תיאור (אופציונלי)">
       </div>
       <div class="form-row">
-        <label>סכום (₪)</label>
+        <label for="txn-amount">סכום (₪)</label>
         <input type="number" id="txn-amount" class="form-input" min="0" step="0.01" placeholder="0.00">
       </div>
       <div class="form-row">
-        <label>סטטוס <button class="link-btn no-print" onclick="openManageStatuses()">נהל סטטוסים</button></label>
+        <label for="txn-status">סטטוס <button class="link-btn no-print" onclick="openManageStatuses()">נהל סטטוסים</button></label>
         <select id="txn-status" class="form-input"></select>
       </div>
     </div>
@@ -152,7 +152,7 @@
   <div class="modal modal-sm" onclick="event.stopPropagation()">
     <div class="modal-header">
       <span>ניהול ספקים</span>
-      <button class="modal-close" onclick="closeManageSuppliers()">✕</button>
+      <button class="modal-close" aria-label="סגור" onclick="closeManageSuppliers()">✕</button>
     </div>
     <div class="modal-body">
       <div id="suppliers-list"></div>
@@ -169,7 +169,7 @@
   <div class="modal modal-sm" onclick="event.stopPropagation()">
     <div class="modal-header">
       <span>ניהול סטטוסים</span>
-      <button class="modal-close" onclick="closeManageStatuses()">✕</button>
+      <button class="modal-close" aria-label="סגור" onclick="closeManageStatuses()">✕</button>
     </div>
     <div class="modal-body">
       <div id="statuses-list"></div>
@@ -187,7 +187,7 @@
   <div class="settings-panel" onclick="event.stopPropagation()">
     <div class="modal-header">
       <span>הגדרות</span>
-      <button class="modal-close" onclick="closeSettings()">✕</button>
+      <button class="modal-close" aria-label="סגור" onclick="closeSettings()">✕</button>
     </div>
     <div class="modal-body">
       <h3 class="settings-section-title">שנים תקציביות</h3>
