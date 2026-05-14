@@ -16,7 +16,13 @@ A lightweight web app for tracking advertising spend against a Google Sheets spr
 
 ## Installation
 
-### 1. Clone the repository
+### 1. Download the latest release
+
+Go to the [Releases page](../../releases/latest) and download the zip archive, then extract it to a folder of your choice.
+
+#### For developers — clone instead
+
+If you have Git and GitHub access, you can clone the repository:
 
 ```bash
 git clone <repo-url>
