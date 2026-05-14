@@ -53,7 +53,9 @@ def test_update_transaction(mock_update, client):
     r = client.post('/api/transaction', json={'action': 'update', 'row': TXN_ROW})
     assert r.status_code == 200
     assert r.get_json()['ok'] is True
-    mock_update.assert_called_once()
+    mock_update.assert_called_once_with('transactions', '999', [
+        '999', '2025/2026', '01/01/2026', 'גוגל', '456', '', '1000', 'שולם'
+    ])
 
 
 @patch('app.sheets.delete_row_by_id')
@@ -86,6 +88,7 @@ def test_create_reserve(mock_append, client):
 def test_delete_reserve(mock_delete, client):
     r = client.post('/api/reserve', json={'action': 'delete', 'id': '888'})
     assert r.status_code == 200
+    assert r.get_json()['ok'] is True
     mock_delete.assert_called_once_with('reserves', '888')
 
 
@@ -93,11 +96,17 @@ def test_delete_reserve(mock_delete, client):
 
 @patch('app.sheets._read_sheet')
 def test_get_settings(mock_read, client):
-    mock_read.return_value = []
+    mock_read.side_effect = lambda key: {
+        'suppliers': [{'id': '1', 'שם': 'גוגל', 'פעיל': 'TRUE'}],
+        'statuses':  [{'id': '2', 'שם': 'שולם', 'צבע': '#2bac76'}],
+        'budget':    [{'שנה': '2025/2026', 'תקציב_פתיחה': '700000', 'חודש_סיום': '8'}],
+    }[key]
     r = client.get('/api/settings')
     assert r.status_code == 200
     body = r.get_json()
-    assert 'suppliers' in body and 'statuses' in body and 'budget' in body
+    assert body['suppliers'] == [{'id': '1', 'שם': 'גוגל', 'פעיל': 'TRUE'}]
+    assert body['statuses']  == [{'id': '2', 'שם': 'שולם', 'צבע': '#2bac76'}]
+    assert body['budget']    == [{'שנה': '2025/2026', 'תקציב_פתיחה': '700000', 'חודש_סיום': '8'}]
 
 
 @patch('app.sheets.append_row')
