@@ -17,8 +17,8 @@ const PALETTE = [
 ];
 
 const HEB_MONTHS = {
-  1:'ינו׳',2:'פבר׳',3:'מרצ׳',4:'אפר׳',5:'מאי',6:'יונ׳',
-  7:'יול׳',8:'אוג׳',9:'ספט׳',10:'אוק׳',11:'נוב׳',12:'דצמ׳',
+  1:'ינו׳',2:'פבר׳',3:'מרץ',4:'אפר׳',5:'מאי',6:'יוני',
+  7:'יולי',8:'אוג׳',9:'ספט׳',10:'אוק׳',11:'נוב׳',12:'דצמ׳',
 };
 
 function escHtml(s) {
@@ -424,43 +424,30 @@ function deleteReserve(id, name) {
 // ═══════════════════════════════════════════════════════
 // JOURNAL — CAROUSEL
 // ═══════════════════════════════════════════════════════
-let _carouselOffset = 0;
-const PILLS_VISIBLE  = 6;
+let _monthReady = false;
 
 function renderCarousel() {
   const cfg      = APP.raw.budget.find(r => r['שנה'] === APP.year) || {};
   const endMonth = parseInt(cfg['חודש_סיום']) || 8;
   const months   = getYearMonths(APP.year, endMonth);
 
-  // Auto-focus current month on first render
-  if (APP.month === null) {
+  // Auto-focus current month on first render only
+  if (!_monthReady) {
+    _monthReady = true;
     const now = new Date();
     const cur = months.find(m => m.month === now.getMonth() + 1 && m.year === now.getFullYear());
     APP.month = cur || null;
-    // Set carousel offset so current month is visible
-    const idx = cur ? months.indexOf(cur) : 0;
-    _carouselOffset = Math.max(0, idx - Math.floor(PILLS_VISIBLE / 2));
   }
 
   const pills = document.getElementById('month-pills');
-  const slice = months.slice(_carouselOffset, _carouselOffset + PILLS_VISIBLE);
-
   const allActive = APP.month === null;
   pills.innerHTML =
     `<div class="month-pill all ${allActive ? 'active' : ''}" onclick="selectMonth(null)">הכל</div>` +
-    slice.map(({ year, month }) => {
+    months.map(({ year, month }) => {
       const active = APP.month && APP.month.month === month && APP.month.year === year;
       return `<div class="month-pill ${active ? 'active' : ''}"
         onclick="selectMonth(${month},${year})">${HEB_MONTHS[month]}</div>`;
     }).join('');
-}
-
-function scrollCarousel(dir) {
-  const cfg      = APP.raw.budget.find(r => r['שנה'] === APP.year) || {};
-  const endMonth = parseInt(cfg['חודש_סיום']) || 8;
-  const months   = getYearMonths(APP.year, endMonth);
-  _carouselOffset = Math.max(0, Math.min(_carouselOffset + dir, months.length - PILLS_VISIBLE));
-  renderCarousel();
 }
 
 function selectMonth(month, year) {
