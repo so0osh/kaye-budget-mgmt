@@ -7,8 +7,6 @@ venv/
 node_modules/
 .env
 .superpowers/
-docs/superpowers/
-.claude/
 *.xlsx
 package.json
 package-lock.json

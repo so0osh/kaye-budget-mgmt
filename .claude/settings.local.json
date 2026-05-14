@@ -1,0 +1,36 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(claude update *)",
+      "Bash(claude plugin *)",
+      "Read(//c/Users/admin/.claude/plugins/**)",
+      "Read(//c/Users/admin/.claude/skills/**)",
+      "Bash(bash *)",
+      "Bash(python3 *)",
+      "PowerShell(Get-Command *)",
+      "WebFetch(domain:kaye.ac.il)",
+      "PowerShell(Copy-Item *)",
+      "PowerShell(New-Item *)",
+      "PowerShell(cd C:\\\\repos\\\\budget-mgmt; Write-Output \"=== FINAL PROJECT SCAFFOLD VERIFICATION ===`n\"; Write-Output \"--- Directory Structure ---\"; Get-ChildItem -Path . | Where-Object {$_.Name -notmatch \"^\\\\.venv|node_modules\"} | Select-Object Mode, Name; Write-Output \"`n--- Git Status ---\"; git status --short; Write-Output \"`n--- Last Commit ---\"; git log -1 --format=\"%H %s\")",
+      "PowerShell(cd C:\\\\repos\\\\budget-mgmt; Get-ChildItem -Path . -Exclude \".venv\", \"node_modules\", \".claude\", \".superpowers\" | ForEach-Object { \"$\\($_.Mode\\) $\\($_.Name\\)\" })",
+      "Bash(git *)",
+      "Bash(Get-ChildItem -Path \"C:\\\\repos\\\\budget-mgmt\" -Force)",
+      "Bash(Select-Object Name, PSIsContainer)",
+      "PowerShell(Test-Path \"C:\\\\repos\\\\budget-mgmt\"; Get-ChildItem \"C:\\\\repos\\\\budget-mgmt\" | ForEach-Object { \"$\\($_.Name\\)\" })",
+      "WebSearch",
+      "Bash(grep -E '\\\\.py$|\\\\.json$')",
+      "Bash(Get-ChildItem \"C:\\\\repos\\\\budget-mgmt\" -File)",
+      "Bash(Select-Object Name)",
+      "Bash(Get-Content *)",
+      "Bash(gh repo *)",
+      "PowerShell(gh *)",
+      "PowerShell(winget install *)",
+      "PowerShell(Select-String *)",
+      "PowerShell($input = \"protocol=https`nhost=github.com`n\"; $token = \\($input | & 'C:\\\\Program Files\\\\Git\\\\cmd\\\\git.exe' credential fill 2>$null\\); $token)",
+      "PowerShell(Out-Null *)",
+      "PowerShell($token = \"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\"; $headers = @{ Authorization = \"token $token\"; Accept = \"application/vnd.github+json\" }; $body = @{ name = \"kaye-budget-mgmt\"; private = $true; description = \"Advertising budget management app backed by Google Sheets\" } | ConvertTo-Json; $resp = Invoke-RestMethod -Method Post -Uri \"https://api.github.com/user/repos\" -Headers $headers -Body $body -ContentType \"application/json\"; $resp.html_url)",
+      "PowerShell($token = \"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\"; $headers = @{ Authorization = \"token $token\"; Accept = \"application/vnd.github+json\" }; $body = @{ tag_name = \"v1.0.0\"; name = \"v1.0.0 — Initial Release\"; body = \"First release of kaye-budget-mgmt.`n`nIncludes:`n- Flask REST API backed by Google Sheets`n- Transactions, reserves, suppliers, statuses, and budget year management`n- Single-page frontend \\(HTML/CSS/JS\\)`n- pytest test suite`n- Full installation guide \\(README.md\\)\"; draft = $false; prerelease = $false } | ConvertTo-Json; $resp = Invoke-RestMethod -Method Post -Uri \"https://api.github.com/repos/so0osh/kaye-budget-mgmt/releases\" -Headers $headers -Body $body -ContentType \"application/json\"; $resp.html_url)",
+      "Bash(git show *)"
+    ]
+  }
+}
