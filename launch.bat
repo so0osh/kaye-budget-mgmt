@@ -76,12 +76,20 @@ if ($latestTag) {
         $tempZip     = Join-Path $env:TEMP "kaye-update.zip"
         $tempExtract = Join-Path $env:TEMP "kaye-extract-$(Get-Random)"
         try {
-            Invoke-WebRequest -Uri "https://api.github.com/repos/$Repo/zipball/$latestTag" `
-                -Headers $headers -OutFile $tempZip -UseBasicParsing
-            Expand-Archive -Path $tempZip -DestinationPath $tempExtract -Force
-            $inner    = (Get-ChildItem $tempExtract -Directory | Select-Object -First 1).FullName
+            $asset = $release.assets | Where-Object { $_.name -eq "kaye-budget-mgmt.zip" } | Select-Object -First 1
+            if ($asset) {
+                $dlHeaders = @{ Authorization = "token $pat"; "User-Agent" = "kaye-budget-launcher"; Accept = "application/octet-stream" }
+                Invoke-WebRequest -Uri $asset.url -Headers $dlHeaders -OutFile $tempZip -UseBasicParsing
+                Expand-Archive -Path $tempZip -DestinationPath $tempExtract -Force
+                $sourceDir = $tempExtract
+            } else {
+                Invoke-WebRequest -Uri "https://api.github.com/repos/$Repo/zipball/$latestTag" `
+                    -Headers $headers -OutFile $tempZip -UseBasicParsing
+                Expand-Archive -Path $tempZip -DestinationPath $tempExtract -Force
+                $sourceDir = (Get-ChildItem $tempExtract -Directory | Select-Object -First 1).FullName
+            }
             $preserve = @("config.json", "credentials.json", ".venv")
-            foreach ($item in (Get-ChildItem $inner)) {
+            foreach ($item in (Get-ChildItem $sourceDir)) {
                 if ($preserve -notcontains $item.Name) {
                     $dest = Join-Path $AppDir $item.Name
                     if ($item.PSIsContainer) {
