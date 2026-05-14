@@ -406,3 +406,162 @@ function deleteReserve(id, name) {
   document.getElementById('confirm-message').textContent = `למחוק את "${name}"?`;
   document.getElementById('confirm-overlay').classList.remove('hidden');
 }
+
+// ═══════════════════════════════════════════════════════
+// JOURNAL — CAROUSEL
+// ═══════════════════════════════════════════════════════
+let _carouselOffset = 0;
+const PILLS_VISIBLE  = 6;
+
+function renderCarousel() {
+  const cfg      = APP.raw.budget.find(r => r['שנה'] === APP.year) || {};
+  const endMonth = parseInt(cfg['חודש_סיום']) || 8;
+  const months   = getYearMonths(APP.year, endMonth);
+
+  // Auto-focus current month on first render
+  if (APP.month === null) {
+    const now = new Date();
+    const cur = months.find(m => m.month === now.getMonth() + 1 && m.year === now.getFullYear());
+    APP.month = cur || null;
+    // Set carousel offset so current month is visible
+    const idx = cur ? months.indexOf(cur) : 0;
+    _carouselOffset = Math.max(0, idx - Math.floor(PILLS_VISIBLE / 2));
+  }
+
+  const pills = document.getElementById('month-pills');
+  const slice = months.slice(_carouselOffset, _carouselOffset + PILLS_VISIBLE);
+
+  const allActive = APP.month === null;
+  pills.innerHTML =
+    `<div class="month-pill all ${allActive ? 'active' : ''}" onclick="selectMonth(null)">הכל</div>` +
+    slice.map(({ year, month }) => {
+      const active = APP.month && APP.month.month === month && APP.month.year === year;
+      return `<div class="month-pill ${active ? 'active' : ''}"
+        onclick="selectMonth(${month},${year})">${HEB_MONTHS[month]}</div>`;
+    }).join('');
+}
+
+function scrollCarousel(dir) {
+  const cfg      = APP.raw.budget.find(r => r['שנה'] === APP.year) || {};
+  const endMonth = parseInt(cfg['חודש_סיום']) || 8;
+  const months   = getYearMonths(APP.year, endMonth);
+  _carouselOffset = Math.max(0, Math.min(_carouselOffset + dir, months.length - PILLS_VISIBLE));
+  renderCarousel();
+}
+
+function selectMonth(month, year) {
+  APP.month = month === null ? null : { month, year };
+  renderCarousel();
+  renderJournal();
+}
+
+// ═══════════════════════════════════════════════════════
+// JOURNAL — FILTERS
+// ═══════════════════════════════════════════════════════
+function renderFilterSelects() {
+  const supSel = document.getElementById('filter-supplier');
+  const stSel  = document.getElementById('filter-status');
+
+  supSel.innerHTML = '<option value="">כל הספקים</option>' +
+    APP.raw.suppliers.filter(s => s['פעיל'] === 'TRUE')
+      .map(s => `<option value="${s['שם']}">${s['שם']}</option>`).join('');
+
+  stSel.innerHTML = '<option value="">כל הסטטוסים</option>' +
+    APP.raw.statuses.map(s => `<option value="${s['שם']}">${s['שם']}</option>`).join('');
+
+  supSel.value = APP.filter.supplier;
+  stSel.value  = APP.filter.status;
+}
+
+function applyFilters() {
+  APP.filter.supplier = document.getElementById('filter-supplier').value;
+  APP.filter.status   = document.getElementById('filter-status').value;
+  renderJournal();
+}
+
+function clearFilters() {
+  APP.filter = { supplier: '', status: '' };
+  renderFilterSelects();
+  renderJournal();
+}
+
+// ═══════════════════════════════════════════════════════
+// JOURNAL — TABLE
+// ═══════════════════════════════════════════════════════
+function getFilteredTransactions() {
+  let rows = APP.raw.transactions.filter(r => r['שנה'] === APP.year);
+
+  if (APP.month) {
+    rows = rows.filter(r => {
+      const parts = r['תאריך'].split('/').map(Number);
+      return parts[1] === APP.month.month && parts[2] === APP.month.year;
+    });
+  }
+  if (APP.filter.supplier) rows = rows.filter(r => r['ספק'] === APP.filter.supplier);
+  if (APP.filter.status)   rows = rows.filter(r => r['סטטוס'] === APP.filter.status);
+
+  return rows.sort((a, b) => {
+    const parse = s => { const [d,m,y] = s.split('/').map(Number); return new Date(y,m-1,d); };
+    return parse(b['תאריך']) - parse(a['תאריך']);
+  });
+}
+
+function renderJournal() {
+  const rows  = getFilteredTransactions();
+  const total = rows.reduce((s, r) => s + (parseFloat(r['סכום']) || 0), 0);
+  const tbody = document.getElementById('journal-tbody');
+
+  tbody.innerHTML = rows.map(r => {
+    const color  = APP.colors[r['ספק']] || '#ccc';
+    const status = APP.raw.statuses.find(s => s['שם'] === r['סטטוס']);
+    const badgeColor = status ? status['צבע'] : '#727272';
+    const badgeBg    = badgeColor + '22';
+    return `<tr>
+      <td>${r['תאריך']}</td>
+      <td><span class="supplier-dot" style="background:${color}"></span>${r['ספק']}</td>
+      <td style="color:#727272;font-size:12px">${r['מס_חשבונית'] || '—'}</td>
+      <td style="color:#727272">${r['תיאור'] || ''}</td>
+      <td class="amount-cell">₪${parseFloat(r['סכום']).toLocaleString()}</td>
+      <td><span class="status-badge" style="background:${badgeBg};color:${badgeColor}">${r['סטטוס']}</span></td>
+      <td class="no-print"><div class="row-actions">
+        <button class="action-btn" onclick="openTransactionModal('${r.id}')">✎</button>
+        <button class="action-btn del" onclick="deleteTransaction('${r.id}','${r['ספק']}','${r['תאריך']}')">✕</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+
+  const period = APP.month
+    ? `${HEB_MONTHS[APP.month.month]} ${APP.month.year}`
+    : APP.year;
+  document.getElementById('journal-count').textContent = `${rows.length} תנועות | ${period}`;
+  document.getElementById('journal-total').textContent = `₪${Math.round(total).toLocaleString()}`;
+}
+
+function printJournal() {
+  window.print();
+}
+
+function deleteTransaction(id, supplier, date) {
+  APP.pendingDelete = async () => {
+    await fetch('/api/transaction', { method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ action: 'delete', id }) });
+    APP.raw.transactions = APP.raw.transactions.filter(r => r.id !== id);
+    render();
+  };
+  document.getElementById('confirm-message').textContent = `למחוק תנועה של ${supplier} מתאריך ${date}?`;
+  document.getElementById('confirm-overlay').classList.remove('hidden');
+}
+
+// ═══════════════════════════════════════════════════════
+// DELETE CONFIRM
+// ═══════════════════════════════════════════════════════
+function confirmDelete() {
+  if (APP.pendingDelete) APP.pendingDelete();
+  APP.pendingDelete = null;
+  document.getElementById('confirm-overlay').classList.add('hidden');
+}
+
+function cancelDelete() {
+  APP.pendingDelete = null;
+  document.getElementById('confirm-overlay').classList.add('hidden');
+}
