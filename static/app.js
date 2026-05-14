@@ -184,3 +184,127 @@ function renderKPIs() {
     </div>
   `;
 }
+
+// ═══════════════════════════════════════════════════════
+// CHART HELPERS
+// ═══════════════════════════════════════════════════════
+function getYearMonths(yearStr, endMonth) {
+  const [startYearStr, endYearStr] = yearStr.split('/');
+  let y = parseInt(startYearStr), m = 9; // academic year starts September
+  const endY = parseInt(endYearStr);
+  const months = [];
+  while (true) {
+    months.push({ year: y, month: m });
+    if (y === endY && m === endMonth) break;
+    m++; if (m > 12) { m = 1; y++; }
+    if (y > endY || (y === endY && m > endMonth)) break;
+  }
+  return months;
+}
+
+function buildChartData() {
+  const cfg      = APP.raw.budget.find(r => r['שנה'] === APP.year) || {};
+  const endMonth = parseInt(cfg['חודש_סיום']) || 8;
+  const months   = getYearMonths(APP.year, endMonth);
+  const txns     = APP.raw.transactions.filter(r => r['שנה'] === APP.year);
+  const active   = APP.raw.suppliers.filter(s => s['פעיל'] === 'TRUE').map(s => s['שם']);
+
+  const labels   = months.map(({ year, month }) => HEB_MONTHS[month]);
+  const datasets = active.map(sup => ({
+    label:           sup,
+    backgroundColor: APP.colors[sup] || '#ccc',
+    borderRadius:    4,
+    data: months.map(({ year, month }) =>
+      txns
+        .filter(r => {
+          const [, m, y] = r['תאריך'].split('/').map(Number);
+          return r['ספק'] === sup && m === month && y === year;
+        })
+        .reduce((s, r) => s + (parseFloat(r['סכום']) || 0), 0)
+    ),
+  }));
+
+  const totals = active.map(sup =>
+    txns.filter(r => r['ספק'] === sup).reduce((s, r) => s + (parseFloat(r['סכום']) || 0), 0)
+  );
+
+  return { labels, datasets, active, totals };
+}
+
+// ═══════════════════════════════════════════════════════
+// RENDER CHARTS
+// ═══════════════════════════════════════════════════════
+function renderCharts() {
+  const { labels, datasets, active, totals } = buildChartData();
+
+  // Legend
+  document.getElementById('bar-legend').innerHTML = active.map(sup =>
+    `<div class="legend-item">
+       <div class="legend-dot" style="background:${APP.colors[sup]||'#ccc'}"></div>
+       ${sup}
+     </div>`
+  ).join('');
+
+  // Bar chart
+  const barCtx = document.getElementById('bar-chart').getContext('2d');
+  if (APP.charts.bar) APP.charts.bar.destroy();
+  APP.charts.bar = new Chart(barCtx, {
+    type: 'bar',
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      animation: { duration: 300 },
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { stacked: true, grid: { display: false }, ticks: { font: { family: 'Heebo', size: 11 } } },
+        y: { stacked: true, grid: { color: '#f0f0f0' }, ticks: {
+          font: { family: 'Heebo', size: 10 },
+          callback: v => '₪' + v.toLocaleString(),
+        }},
+      },
+    },
+  });
+
+  // Pie chart
+  const total   = totals.reduce((a, b) => a + b, 0);
+  const pieCtx  = document.getElementById('pie-chart').getContext('2d');
+  if (APP.charts.pie) APP.charts.pie.destroy();
+  APP.charts.pie = new Chart(pieCtx, {
+    type: 'doughnut',
+    data: {
+      labels: active,
+      datasets: [{
+        data:            totals,
+        backgroundColor: active.map(s => APP.colors[s] || '#ccc'),
+        borderWidth: 2, borderColor: '#fff',
+      }],
+    },
+    options: {
+      responsive: true,
+      cutout: '62%',
+      plugins: {
+        legend: { position: 'bottom', labels: { font: { family: 'Heebo', size: 11 }, padding: 12 } },
+        tooltip: {
+          rtl: true,
+          callbacks: {
+            label: ctx => {
+              const pct = total > 0 ? ((ctx.parsed / total) * 100).toFixed(1) : '0.0';
+              return `  ${ctx.label}: ₪${Math.round(ctx.parsed).toLocaleString()} (${pct}%)`;
+            },
+          },
+          bodyFont: { family: 'Heebo', size: 12 },
+          padding: 10, cornerRadius: 8,
+        },
+      },
+    },
+  });
+}
+
+function setBarMode(mode) {
+  const stacked = mode === 'stacked';
+  APP.charts.bar.options.scales.x.stacked = stacked;
+  APP.charts.bar.options.scales.y.stacked = stacked;
+  APP.charts.bar.update();
+  document.getElementById('btn-stacked').classList.toggle('active', stacked);
+  document.getElementById('btn-grouped').classList.toggle('active', !stacked);
+}
