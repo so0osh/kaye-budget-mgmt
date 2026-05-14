@@ -29,6 +29,18 @@ git clone <repo-url>
 cd kaye-budget-mgmt
 ```
 
+After cloning, set up manually:
+
+```bash
+python -m venv .venv
+.venv\Scripts\activate      # Windows
+# source .venv/bin/activate  # macOS / Linux
+pip install -r requirements.txt
+python app.py
+```
+
+`launch.bat` is Windows-only; developers on macOS/Linux use the above steps.
+
 ### 2. Copy and fill in `config.json`
 
 Copy `config.template.json` to `config.json` and fill in both fields:
@@ -87,13 +99,17 @@ The launcher will automatically:
 
 ### Step 3 — Configure the app
 
-Open `config.json` and paste the spreadsheet ID (the long string in the Google Sheets URL between `/d/` and `/edit`):
+Open `config.template.json`, copy it to `config.json`, and fill in both fields:
 
 ```json
 {
-  "spreadsheet_id": "YOUR_SPREADSHEET_ID_HERE"
+  "spreadsheet_id": "YOUR_SPREADSHEET_ID_HERE",
+  "github_pat":     "YOUR_GITHUB_PAT_HERE"
 }
 ```
+
+- **`spreadsheet_id`**: the long string in the Google Sheets URL between `/d/` and `/edit`
+- **`github_pat`**: a GitHub fine-grained token with **Contents: Read-only** access to this repo (create at GitHub → Settings → Developer settings → Personal access tokens → Fine-grained tokens)
 
 ---
 

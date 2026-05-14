@@ -1,5 +1,6 @@
 credentials.json
 config.json
+version.txt
 __pycache__/
 *.pyc
 .pytest_cache/
