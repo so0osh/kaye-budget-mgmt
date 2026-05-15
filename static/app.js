@@ -34,7 +34,7 @@ function _applySectionState(key, expanded, animate) {
   const body    = block.querySelector('.section-body');
   const chevron = block.querySelector('.section-chevron');
 
-  chevron.style.transform = expanded ? 'rotate(90deg)' : 'rotate(0deg)';
+  chevron.style.transform = expanded ? 'rotate(-90deg)' : 'rotate(0deg)';
 
   if (!animate) {
     body.style.transition = 'none';
@@ -64,6 +64,12 @@ function toggleSection(key) {
   state[key]  = !state[key];
   _saveSectionState(state);
   _applySectionState(key, state[key], true);
+}
+
+function setAllSections(expanded) {
+  const state = Object.fromEntries(Object.keys(SECTION_DEFAULTS).map(k => [k, expanded]));
+  _saveSectionState(state);
+  Object.keys(state).forEach(k => _applySectionState(k, expanded, true));
 }
 
 function computeDuplicateIds() {
@@ -112,6 +118,10 @@ async function loadData() {
     fetch('/api/version'),
   ]);
   APP.raw     = await dataRes.json();
+  if (APP.raw.error) {
+    document.body.innerHTML = `<div style="padding:40px;color:#c00;font-size:16px">שגיאה בטעינת נתונים: ${APP.raw.error}</div>`;
+    return;
+  }
   const vData = await versionRes.json();
   APP.version = vData.version || '';
   const verEl = document.getElementById('app-version');
@@ -717,8 +727,9 @@ function cancelDelete() {
 // TRANSACTION MODAL
 // ═══════════════════════════════════════════════════════
 function _restoreTransactionForm() {
-  const deptOptions = APP.raw.departments.length
-    ? APP.raw.departments.map(d =>
+  const depts = APP.raw.departments || [];
+  const deptOptions = depts.length
+    ? depts.map(d =>
         `<option value="${escHtml(d['שם'])}">${escHtml(d['שם'])}</option>`
       ).join('')
     : '<option value="" disabled selected>— הוסף מחלקה תחילה —</option>';
@@ -785,7 +796,7 @@ function changeTxnDept(deptName) {
 // SUPPLIER COMBOBOX
 // ═══════════════════════════════════════════════════════
 function buildCombobox(inputEl, hiddenEl, getOptions) {
-  const listEl = document.getElementById(inputEl.id + '-list');
+  const listEl = document.getElementById(hiddenEl.id + '-list');
 
   function renderList() {
     const query = inputEl.value.toLowerCase();
@@ -858,7 +869,7 @@ function openTransactionModal(id) {
   const supHidden = document.getElementById('txn-supplier');
   buildCombobox(supInput, supHidden, () =>
     APP.raw.suppliers
-      .filter(s => s['פעיל'] === 'TRUE' && s['מחלקה'] === _supplierDept)
+      .filter(s => s['פעיל'] === 'TRUE' && (!_supplierDept || s['מחלקה'] === _supplierDept))
       .map(s => s['שם'])
   );
 
@@ -892,8 +903,9 @@ function openTransactionModal(id) {
     document.getElementById('modal-title').textContent = 'הוספת תנועה';
     fp.setDate(new Date(), true);
 
-    const defaultDept = APP.raw.departments.find(d => d['ברירת_מחדל'] === 'TRUE')
-                     || APP.raw.departments[0]
+    const depts = APP.raw.departments || [];
+    const defaultDept = depts.find(d => d['ברירת_מחדל'] === 'TRUE')
+                     || depts[0]
                      || null;
     if (defaultDept) {
       deptSel.value = defaultDept['שם'];
@@ -911,7 +923,8 @@ async function saveTransaction() {
   const amount   = document.getElementById('txn-amount').value;
   const dept     = document.getElementById('txn-dept').value;
   const supplier = document.getElementById('txn-supplier').value;
-  if (!dateVal || !amount || !dept || !supplier) return;
+  if (!dateVal || !amount || !supplier) return;
+  if (!dept) { alert('יש לבחור מחלקה לפני השמירה, או להוסיף מחלקה דרך הקישור למעלה.'); return; }
 
   const row = {
     id:          id || String(Date.now()),

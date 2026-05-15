@@ -165,9 +165,18 @@ def delete_row_by_id(sheet_key, row_id):
 
 
 def seed_sheets():
-    """Write headers + seed data to all sheets if they are empty."""
+    """Create missing sheet tabs, then write headers + seed data to empty ones."""
     _init()
+    meta = _svc.spreadsheets().get(spreadsheetId=_sid).execute()
+    existing = {s['properties']['title'] for s in meta['sheets']}
+
     for key, name in SHEET_NAMES.items():
+        if name not in existing:
+            _svc.spreadsheets().batchUpdate(
+                spreadsheetId=_sid,
+                body={'requests': [{'addSheet': {'properties': {'title': name}}}]},
+            ).execute()
+
         result = _svc.spreadsheets().values().get(
             spreadsheetId=_sid,
             range=f'{name}!A1:A1'
