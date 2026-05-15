@@ -924,6 +924,7 @@ async function updateSupplierDept(id, name, active, deptName) {
     body: JSON.stringify({ type: 'supplier', action: 'update', row }) });
   const s = APP.raw.suppliers.find(x => x.id === id);
   if (s) s['מחלקה'] = deptName;
+  renderSuppliersList();
 }
 
 async function addSupplier() {
