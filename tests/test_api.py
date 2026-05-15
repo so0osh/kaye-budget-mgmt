@@ -102,7 +102,7 @@ def test_delete_reserve(mock_delete, client):
 @patch('app.sheets._read_sheet')
 def test_get_settings(mock_read, client):
     mock_read.side_effect = lambda key: {
-        'suppliers':   [{'id': '1', 'שם': 'גוגל', 'פעיל': 'TRUE'}],
+        'suppliers':   [{'id': '1', 'שם': 'גוגל', 'פעיל': 'TRUE', 'מחלקה': 'שיווק'}],
         'statuses':    [{'id': '2', 'שם': 'שולם', 'צבע': '#2bac76'}],
         'budget':      [{'שנה': '2025/2026', 'תקציב_פתיחה': '700000', 'חודש_סיום': '8'}],
         'departments': [{'id': '3', 'שם': 'שיווק', 'ברירת_מחדל': 'TRUE'}],
@@ -110,7 +110,7 @@ def test_get_settings(mock_read, client):
     r = client.get('/api/settings')
     assert r.status_code == 200
     body = r.get_json()
-    assert body['suppliers'] == [{'id': '1', 'שם': 'גוגל', 'פעיל': 'TRUE'}]
+    assert body['suppliers'] == [{'id': '1', 'שם': 'גוגל', 'פעיל': 'TRUE', 'מחלקה': 'שיווק'}]
     assert body['statuses']  == [{'id': '2', 'שם': 'שולם', 'צבע': '#2bac76'}]
     assert body['budget']    == [{'שנה': '2025/2026', 'תקציב_פתיחה': '700000', 'חודש_סיום': '8'}]
     assert body['departments'] == [{'id': '3', 'שם': 'שיווק', 'ברירת_מחדל': 'TRUE'}]

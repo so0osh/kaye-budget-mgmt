@@ -620,8 +620,12 @@ function clearFilters() {
   APP.filter.duplicates = false;
   const btn = document.getElementById('filter-duplicates');
   if (btn) { btn.style.borderColor = ''; btn.style.color = ''; }
+  APP.filter.chartDept = '';
+  const cdf = document.getElementById('chart-dept-filter');
+  if (cdf) cdf.value = '';
   renderFilterSelects();
   renderJournal();
+  renderCharts();
 }
 
 // ═══════════════════════════════════════════════════════
