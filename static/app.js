@@ -272,12 +272,13 @@ function buildChartData() {
 function initChartDeptFilter() {
   const sel = document.getElementById('chart-dept-filter');
   if (!sel) return;
-  const current = sel.value;
+  const current = APP.filter.chartDept;
   sel.innerHTML = '<option value="">כל המחלקות</option>' +
     APP.raw.departments.map(d =>
       `<option value="${escHtml(d['שם'])}">${escHtml(d['שם'])}</option>`
     ).join('');
   sel.value = current;
+  if (sel.value !== current) APP.filter.chartDept = '';
 }
 
 function applyChartDeptFilter() {
