@@ -132,35 +132,39 @@ def _setup_worker(set_status, set_error, close):
     try:
         # 1. Read config
         set_status("LOADING CONFIG")
-        cfg = _read_config(os.path.join(APP_DIR, "config.json"))
-        pat = cfg.get("github_pat", "")
+        cfg   = _read_config(os.path.join(APP_DIR, "config.json"))
+        pat   = cfg.get("github_pat", "")
+        debug = cfg.get("debug", False)
 
-        # 2. Check for updates
-        set_status("CHECKING FOR UPDATES")
+        # 2. Check for updates (skipped in debug mode)
         version_path = os.path.join(APP_DIR, "version.txt")
-        if os.path.exists(version_path):
-            with open(version_path) as f:
-                current = f.read().strip()
+        if debug:
+            set_status("DEBUG MODE — SKIPPING UPDATE CHECK")
         else:
-            current = "none"
-        release, latest = None, None
-        if pat:
-            try:
-                req = urllib.request.Request(
-                    f"https://api.github.com/repos/{REPO}/releases/latest",
-                    headers={"Authorization": f"token {pat}", "User-Agent": "kaye-budget-launcher"})
-                with urllib.request.urlopen(req, timeout=8) as r:
-                    release = json.loads(r.read())
-                latest = release["tag_name"]
-            except Exception:
-                pass  # network unavailable — skip update silently
+            set_status("CHECKING FOR UPDATES")
+            if os.path.exists(version_path):
+                with open(version_path) as f:
+                    current = f.read().strip()
+            else:
+                current = "none"
+            release, latest = None, None
+            if pat:
+                try:
+                    req = urllib.request.Request(
+                        f"https://api.github.com/repos/{REPO}/releases/latest",
+                        headers={"Authorization": f"token {pat}", "User-Agent": "kaye-budget-launcher"})
+                    with urllib.request.urlopen(req, timeout=8) as r:
+                        release = json.loads(r.read())
+                    latest = release["tag_name"]
+                except Exception:
+                    pass  # network unavailable — skip update silently
 
-        # 3. Apply update if newer version available
-        if _needs_update(current, latest):
-            set_status("DOWNLOADING UPDATE")
-            _apply_update(release, pat)
-            with open(version_path, "w") as f:
-                f.write(latest)
+            # 3. Apply update if newer version available
+            if _needs_update(current, latest):
+                set_status("DOWNLOADING UPDATE")
+                _apply_update(release, pat)
+                with open(version_path, "w") as f:
+                    f.write(latest)
 
         # 4. Create venv if absent
         venv_path = os.path.join(APP_DIR, ".venv")
