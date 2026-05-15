@@ -666,6 +666,7 @@ function _restoreTransactionForm() {
 }
 
 let _supplierDept = '';
+let _suppliersModalDept = '';
 
 function changeTxnDept(deptName) {
   _supplierDept = deptName;
@@ -863,33 +864,72 @@ function closeModal(event) {
 // MANAGE SUPPLIERS
 // ═══════════════════════════════════════════════════════
 function openManageSuppliers() {
+  _suppliersModalDept = document.getElementById('txn-dept')?.value || '';
+  const deptSel = document.getElementById('suppliers-modal-dept-filter');
+  deptSel.innerHTML = '<option value="">הכל</option>' +
+    APP.raw.departments.map(d =>
+      `<option value="${escHtml(d['שם'])}">${escHtml(d['שם'])}</option>`
+    ).join('');
+  deptSel.value = _suppliersModalDept;
   renderSuppliersList();
   document.getElementById('suppliers-modal').classList.remove('hidden');
 }
 
+function filterSuppliersModal(deptName) {
+  _suppliersModalDept = deptName;
+  renderSuppliersList();
+}
+
 function closeManageSuppliers() {
   document.getElementById('suppliers-modal').classList.add('hidden');
+  assignColors();
   renderFilterSelects();
 }
 
 function renderSuppliersList() {
+  const visible = _suppliersModalDept
+    ? APP.raw.suppliers.filter(s => s['מחלקה'] === _suppliersModalDept)
+    : APP.raw.suppliers;
+
   document.getElementById('suppliers-list').innerHTML =
-    APP.raw.suppliers.map(s => `
-      <div class="manage-item">
-        <span>${escHtml(s['שם'])} ${s['פעיל'] === 'FALSE' ? '<em style="color:#8a8a8a;font-size:11px">(לא פעיל)</em>' : ''}</span>
-        <div class="manage-item-actions">
-          <button class="action-btn" data-id="${escHtml(s.id)}" data-name="${escHtml(s['שם'])}" data-active="${escHtml(s['פעיל'])}" onclick="toggleSupplierActive(this.dataset.id, this.dataset.name, this.dataset.active)" title="${s['פעיל']==='TRUE'?'הסתר':'הפעל'}">
-            ${s['פעיל'] === 'TRUE' ? '○' : '●'}
-          </button>
-          <button class="action-btn del" data-id="${escHtml(s.id)}" data-name="${escHtml(s['שם'])}" onclick="deleteSupplier(this.dataset.id, this.dataset.name)">✕</button>
-        </div>
-      </div>`).join('');
+    visible.map(s => {
+      const deptOpts = '<option value="">ללא מחלקה</option>' +
+        APP.raw.departments.map(d =>
+          `<option value="${escHtml(d['שם'])}" ${d['שם'] === s['מחלקה'] ? 'selected' : ''}>${escHtml(d['שם'])}</option>`
+        ).join('');
+      return `
+        <div class="manage-item">
+          <span>${escHtml(s['שם'])} ${s['פעיל'] === 'FALSE' ? '<em style="color:#8a8a8a;font-size:11px">(לא פעיל)</em>' : ''}</span>
+          <div class="manage-item-actions" style="gap:4px">
+            <select class="filter-select" style="font-size:11px;padding:2px 6px"
+              data-id="${escHtml(s.id)}" data-name="${escHtml(s['שם'])}" data-active="${escHtml(s['פעיל'])}"
+              onchange="updateSupplierDept(this.dataset.id, this.dataset.name, this.dataset.active, this.value)">
+              ${deptOpts}
+            </select>
+            <button class="action-btn" data-id="${escHtml(s.id)}" data-name="${escHtml(s['שם'])}" data-active="${escHtml(s['פעיל'])}"
+              onclick="toggleSupplierActive(this.dataset.id, this.dataset.name, this.dataset.active)"
+              title="${s['פעיל'] === 'TRUE' ? 'הסתר' : 'הפעל'}">
+              ${s['פעיל'] === 'TRUE' ? '○' : '●'}
+            </button>
+            <button class="action-btn del" data-id="${escHtml(s.id)}" data-name="${escHtml(s['שם'])}"
+              onclick="deleteSupplier(this.dataset.id, this.dataset.name)">✕</button>
+          </div>
+        </div>`;
+    }).join('');
+}
+
+async function updateSupplierDept(id, name, active, deptName) {
+  const row = { id, שם: name, פעיל: active, מחלקה: deptName };
+  await fetch('/api/settings', { method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ type: 'supplier', action: 'update', row }) });
+  const s = APP.raw.suppliers.find(x => x.id === id);
+  if (s) s['מחלקה'] = deptName;
 }
 
 async function addSupplier() {
   const name = document.getElementById('new-supplier-name').value.trim();
   if (!name) return;
-  const row = { id: String(Date.now()), שם: name, פעיל: 'TRUE' };
+  const row = { id: String(Date.now()), שם: name, פעיל: 'TRUE', מחלקה: _suppliersModalDept };
   await fetch('/api/settings', { method: 'POST', headers: {'Content-Type':'application/json'},
     body: JSON.stringify({ type: 'supplier', action: 'create', row }) });
   APP.raw.suppliers.push(row);
@@ -900,10 +940,10 @@ async function addSupplier() {
 
 async function toggleSupplierActive(id, name, current) {
   const newActive = current === 'TRUE' ? 'FALSE' : 'TRUE';
-  const row = { id, שם: name, פעיל: newActive };
+  const s   = APP.raw.suppliers.find(x => x.id === id);
+  const row = { id, שם: name, פעיל: newActive, מחלקה: s ? (s['מחלקה'] || '') : '' };
   await fetch('/api/settings', { method: 'POST', headers: {'Content-Type':'application/json'},
     body: JSON.stringify({ type: 'supplier', action: 'update', row }) });
-  const s = APP.raw.suppliers.find(x => x.id === id);
   if (s) s['פעיל'] = newActive;
   renderSuppliersList();
 }

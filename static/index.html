@@ -166,6 +166,11 @@
       <button class="modal-close" aria-label="סגור" onclick="closeManageSuppliers()">✕</button>
     </div>
     <div class="modal-body">
+      <div style="margin-bottom:10px">
+        <select id="suppliers-modal-dept-filter" class="filter-select" style="width:100%" onchange="filterSuppliersModal(this.value)">
+          <option value="">הכל</option>
+        </select>
+      </div>
       <div id="suppliers-list"></div>
       <div class="add-row">
         <input type="text" id="new-supplier-name" class="form-input" placeholder="שם ספק חדש">
