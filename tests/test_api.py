@@ -113,6 +113,7 @@ def test_get_settings(mock_read, client):
     assert body['suppliers'] == [{'id': '1', 'שם': 'גוגל', 'פעיל': 'TRUE'}]
     assert body['statuses']  == [{'id': '2', 'שם': 'שולם', 'צבע': '#2bac76'}]
     assert body['budget']    == [{'שנה': '2025/2026', 'תקציב_פתיחה': '700000', 'חודש_סיום': '8'}]
+    assert body['departments'] == [{'id': '3', 'שם': 'שיווק', 'ברירת_מחדל': 'TRUE'}]
 
 
 @patch('app.sheets.append_row')
