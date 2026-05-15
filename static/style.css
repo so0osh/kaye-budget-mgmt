@@ -297,6 +297,32 @@ body {
 }
 .form-input:focus { border-color: #1594a0; }
 .add-row { display: flex; gap: 8px; align-items: center; margin-top: 12px; }
+
+/* ── Transaction type toggle ── */
+.txn-type-toggle {
+  display: flex; border: 1.5px solid #e2e2e2; border-radius: 8px; overflow: hidden;
+}
+.txn-type-btn {
+  flex: 1; padding: 8px 12px; border: none; background: transparent;
+  font-family: 'Heebo', sans-serif; font-size: 13px; cursor: pointer;
+  color: #4e4e4e; transition: background 0.15s, color 0.15s;
+}
+.txn-type-btn:not(:first-child) { border-right: 1.5px solid #e2e2e2; }
+.txn-type-btn.active {
+  background: #1594a0; color: #fff;
+}
+.txn-type-btn[data-type="credit"].active {
+  background: #059669; color: #fff;
+}
+
+/* ── Journal amount badge ── */
+.txn-badge {
+  display: inline-block; font-size: 10px; padding: 1px 6px; border-radius: 10px;
+  vertical-align: middle; font-weight: 500;
+}
+.txn-badge--charge { background: #f1f5f9; color: #64748b; }
+.txn-badge--credit { background: #d1fae5; color: #065f46; }
+.amount-credit { color: #059669; }
 .add-row .form-input { flex: 1; }
 
 /* ── Manage lists (suppliers/statuses) ── */

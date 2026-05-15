@@ -118,6 +118,11 @@
           <select id="filter-status" class="filter-select" onchange="applyFilters()">
             <option value="">כל הסטטוסים</option>
           </select>
+          <select id="filter-txn-type" class="filter-select" onchange="applyTxnTypeFilter()">
+            <option value="">כל הסוגים</option>
+            <option value="charge">חיובים</option>
+            <option value="credit">זיכויים</option>
+          </select>
           <button id="filter-duplicates" class="btn btn-ghost" style="font-size:12px;padding:4px 10px" onclick="toggleDuplicateFilter()">⚠ כפילויות</button>
           <button class="btn btn-ghost" style="font-size:12px;padding:4px 10px" onclick="clearFilters()">✕ נקה</button>
         </div>

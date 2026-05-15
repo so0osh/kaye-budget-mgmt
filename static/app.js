@@ -5,7 +5,7 @@ const APP = {
   raw:          null,          // full data from /api/data
   year:         null,          // selected year string e.g. '2025/2026'
   month:        null,          // { year, month } or null for 'all'
-  filter:       { supplier: '', status: '', dept: '', duplicates: false, chartDept: '' },
+  filter:       { supplier: '', status: '', dept: '', duplicates: false, chartDept: '', txnType: '' },
   charts:       { bar: null, pie: null },
   colors:       {},            // supplierName -> hex color
   pendingDelete: null,         // { fn } waiting for confirm
@@ -306,7 +306,7 @@ function buildChartData() {
   const cfg      = APP.raw.budget.find(r => r['שנה'] === APP.year) || {};
   const endMonth = parseInt(cfg['חודש_סיום']) || 8;
   const months   = getYearMonths(APP.year, endMonth);
-  const txns     = APP.raw.transactions.filter(r => r['שנה'] === APP.year);
+  const txns     = APP.raw.transactions.filter(r => r['שנה'] === APP.year && (parseFloat(r['סכום']) || 0) >= 0);
 
   let active = APP.raw.suppliers.filter(s => s['פעיל'] === 'TRUE').map(s => s['שם']);
   if (APP.filter.chartDept) {
@@ -623,11 +623,19 @@ function applyDeptFilter() {
   renderJournal();
 }
 
+function applyTxnTypeFilter() {
+  APP.filter.txnType = document.getElementById('filter-txn-type').value;
+  renderJournal();
+}
+
 function clearFilters() {
   APP.filter.supplier  = '';
   APP.filter.status    = '';
   APP.filter.dept      = '';
   APP.filter.duplicates = false;
+  APP.filter.txnType   = '';
+  const ttf = document.getElementById('filter-txn-type');
+  if (ttf) ttf.value = '';
   const btn = document.getElementById('filter-duplicates');
   if (btn) { btn.style.borderColor = ''; btn.style.color = ''; }
   APP.filter.chartDept = '';
@@ -654,6 +662,8 @@ function getFilteredTransactions() {
   if (APP.filter.status)   rows = rows.filter(r => r['סטטוס'] === APP.filter.status);
   if (APP.filter.duplicates) rows = rows.filter(r => APP.duplicateIds.has(r.id));
   if (APP.filter.dept)       rows = rows.filter(r => r['מחלקה'] === APP.filter.dept);
+  if (APP.filter.txnType === 'charge') rows = rows.filter(r => (parseFloat(r['סכום']) || 0) >= 0);
+  if (APP.filter.txnType === 'credit') rows = rows.filter(r => (parseFloat(r['סכום']) || 0) < 0);
 
   return rows.sort((a, b) => {
     const parse = s => { const [d,m,y] = s.split('/').map(Number); return new Date(y,m-1,d); };
@@ -678,7 +688,7 @@ function renderJournal() {
       <td><span class="supplier-dot" style="background:${color}"></span>${escHtml(r['ספק'])}</td>
       <td style="color:#727272;font-size:12px">${escHtml(r['מס_חשבונית'] || '—')} ${dupBadge}</td>
       <td style="color:#727272">${escHtml(r['תיאור'] || '')}</td>
-      <td class="amount-cell">₪${parseFloat(r['סכום']).toLocaleString()}</td>
+      <td class="amount-cell ${parseFloat(r['סכום']) < 0 ? 'amount-credit' : ''}">₪${Math.abs(parseFloat(r['סכום'])).toLocaleString()} <span class="txn-badge ${parseFloat(r['סכום']) < 0 ? 'txn-badge--credit' : 'txn-badge--charge'}">${parseFloat(r['סכום']) < 0 ? 'זיכוי' : 'חיוב'}</span></td>
       <td><span class="status-badge" style="background:${badgeBg};color:${badgeColor}">${escHtml(r['סטטוס'])}</span></td>
       <td class="no-print"><div class="row-actions">
         <button class="action-btn" data-id="${escHtml(r.id)}" onclick="openTransactionModal(this.dataset.id)">✎</button>
@@ -761,8 +771,15 @@ function _restoreTransactionForm() {
       <input type="text" id="txn-description" class="form-input" placeholder="תיאור (אופציונלי)">
     </div>
     <div class="form-row">
+      <label>סוג תנועה</label>
+      <div class="txn-type-toggle" id="txn-type-toggle">
+        <button type="button" class="txn-type-btn active" data-type="charge" onclick="selectTxnType(this)">חיוב</button>
+        <button type="button" class="txn-type-btn" data-type="credit" onclick="selectTxnType(this)">זיכוי</button>
+      </div>
+    </div>
+    <div class="form-row">
       <label>סכום (₪)</label>
-      <input type="number" id="txn-amount" class="form-input" min="0" step="0.01">
+      <input type="number" id="txn-amount" class="form-input" step="0.01" placeholder="0.00">
     </div>
     <div class="form-row">
       <label>סטטוס <button class="link-btn no-print" onclick="openManageStatuses()">נהל סטטוסים</button></label>
@@ -855,6 +872,16 @@ function buildCombobox(inputEl, hiddenEl, getOptions) {
   });
 }
 
+function selectTxnType(btn) {
+  document.querySelectorAll('.txn-type-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function _getTxnType() {
+  return document.querySelector('.txn-type-btn[data-type="credit"]')?.classList.contains('active')
+    ? 'credit' : 'charge';
+}
+
 function openTransactionModal(id) {
   _restoreTransactionForm();
 
@@ -897,7 +924,10 @@ function openTransactionModal(id) {
 
     document.getElementById('txn-invoice').value     = r['מס_חשבונית'];
     document.getElementById('txn-description').value = r['תיאור'];
-    document.getElementById('txn-amount').value      = r['סכום'];
+    const rawAmt = parseFloat(r['סכום']) || 0;
+    document.getElementById('txn-amount').value = Math.abs(rawAmt);
+    document.querySelectorAll('.txn-type-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector(`.txn-type-btn[data-type="${rawAmt < 0 ? 'credit' : 'charge'}"]`)?.classList.add('active');
     document.getElementById('txn-status').value      = r['סטטוס'];
   } else {
     document.getElementById('modal-title').textContent = 'הוספת תנועה';
@@ -920,11 +950,12 @@ function openTransactionModal(id) {
 async function saveTransaction() {
   const id       = document.getElementById('txn-id').value;
   const dateVal  = document.getElementById('txn-date').value;
-  const amount   = document.getElementById('txn-amount').value;
   const dept     = document.getElementById('txn-dept').value;
   const supplier = document.getElementById('txn-supplier').value;
-  if (!dateVal || !amount || !supplier) return;
+  const rawAmount = parseFloat(document.getElementById('txn-amount').value) || 0;
+  if (!dateVal || !rawAmount || !supplier) return;
   if (!dept) { alert('יש לבחור מחלקה לפני השמירה, או להוסיף מחלקה דרך הקישור למעלה.'); return; }
+  const amount = _getTxnType() === 'credit' ? -Math.abs(rawAmount) : Math.abs(rawAmount);
 
   const row = {
     id:          id || String(Date.now()),
