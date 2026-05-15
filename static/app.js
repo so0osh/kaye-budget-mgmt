@@ -13,6 +13,59 @@ const APP = {
   version:      '',
 };
 
+const SECTION_DEFAULTS = { kpis: false, charts: false, reserves: false, journal: true };
+const SECTIONS_KEY     = 'kaye_sections';
+
+function _loadSectionState() {
+  try {
+    return { ...SECTION_DEFAULTS, ...JSON.parse(localStorage.getItem(SECTIONS_KEY) || 'null') };
+  } catch {
+    return { ...SECTION_DEFAULTS };
+  }
+}
+
+function _saveSectionState(state) {
+  localStorage.setItem(SECTIONS_KEY, JSON.stringify(state));
+}
+
+function _applySectionState(key, expanded, animate) {
+  const block   = document.querySelector(`.section-block[data-section="${key}"]`);
+  if (!block) return;
+  const body    = block.querySelector('.section-body');
+  const chevron = block.querySelector('.section-chevron');
+
+  chevron.style.transform = expanded ? 'rotate(90deg)' : 'rotate(0deg)';
+
+  if (!animate) {
+    body.style.transition = 'none';
+    body.style.maxHeight  = expanded ? 'none' : '0';
+    requestAnimationFrame(() => { body.style.transition = ''; });
+    return;
+  }
+
+  if (expanded) {
+    body.style.maxHeight = body.scrollHeight + 'px';
+    body.addEventListener('transitionend', () => {
+      if (body.style.maxHeight !== '0px') body.style.maxHeight = 'none';
+    }, { once: true });
+  } else {
+    body.style.maxHeight = body.scrollHeight + 'px';
+    requestAnimationFrame(() => { body.style.maxHeight = '0'; });
+  }
+}
+
+function applyAllSectionStates(animate = false) {
+  const state = _loadSectionState();
+  Object.entries(state).forEach(([k, v]) => _applySectionState(k, v, animate));
+}
+
+function toggleSection(key) {
+  const state = _loadSectionState();
+  state[key]  = !state[key];
+  _saveSectionState(state);
+  _applySectionState(key, state[key], true);
+}
+
 function computeDuplicateIds() {
   const counts = {};
   APP.raw.transactions.forEach(r => {
@@ -54,11 +107,19 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 async function loadData() {
-  const res = await fetch('/api/data');
-  APP.raw = await res.json();
+  const [dataRes, versionRes] = await Promise.all([
+    fetch('/api/data'),
+    fetch('/api/version'),
+  ]);
+  APP.raw     = await dataRes.json();
+  const vData = await versionRes.json();
+  APP.version = vData.version || '';
+  const verEl = document.getElementById('app-version');
+  if (verEl) verEl.textContent = APP.version;
   assignColors();
   initYearSelector();
   render();
+  applyAllSectionStates(false);
 }
 
 function assignColors() {

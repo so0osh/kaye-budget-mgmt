@@ -63,14 +63,41 @@ body {
 /* ── Page Layout ── */
 .page { max-width: 1280px; margin: 0 auto; padding: 24px 28px 48px; }
 
-/* ── Section Title ── */
+/* ── Collapsible Sections ── */
+.section-block { margin-bottom: 24px; }
 .section-title {
-  font-size: 15px; font-weight: 700; margin-bottom: 14px;
+  font-size: 15px; font-weight: 700;
   display: flex; align-items: center; gap: 8px;
+  cursor: pointer; user-select: none;
+  margin-bottom: 0;
+  padding-bottom: 14px;
 }
+.section-title:hover { opacity: 0.85; }
 .section-title::before {
   content: ''; width: 4px; height: 18px;
   background: #1594a0; border-radius: 2px; display: inline-block;
+  flex-shrink: 0;
+}
+.section-chevron {
+  font-size: 15px; color: #1594a0;
+  display: inline-block;
+  transition: transform 0.25s ease;
+  line-height: 1; flex-shrink: 0;
+}
+.section-body {
+  overflow: hidden;
+  transition: max-height 0.25s ease;
+}
+
+/* ── Version Tag ── */
+.version-tag {
+  font-size: 11px;
+  color: #727272;
+  background: #f0f0f0;
+  border-radius: 20px;
+  padding: 2px 8px;
+  font-weight: 500;
+  margin-right: 4px;
 }
 
 /* ── KPI Grid ── */

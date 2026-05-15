@@ -40,6 +40,12 @@ IMG_PANEL_W        = 340
 
 CREATE_NO_WINDOW = 0x08000000  # Windows: suppress console window for subprocesses
 
+try:
+    with open(os.path.join(APP_DIR, 'version.txt')) as _vf:
+        VERSION = _vf.read().strip()
+except Exception:
+    VERSION = ''
+
 
 # ── Pure helpers (also unit-tested) ──────────────────────────────────────────
 
@@ -227,7 +233,11 @@ class _SplashApp:
                  ).pack(anchor="w")
         tk.Label(inner, text="Management",
                  font=("Segoe UI Light", 28), fg=GOLD, bg=BG_RIGHT
-                 ).pack(anchor="w", pady=(0, 32))
+                 ).pack(anchor="w", pady=(0, 8))
+        if VERSION:
+            tk.Label(inner, text=VERSION,
+                     font=("Segoe UI Light", 10), fg=SLATE, bg=BG_RIGHT
+                     ).pack(anchor="w", pady=(0, 20))
         tk.Frame(inner, height=1, width=220, bg=DIVIDER).pack(anchor="w", pady=(0, 24))
 
         self._status_var = tk.StringVar(value="LOADING")

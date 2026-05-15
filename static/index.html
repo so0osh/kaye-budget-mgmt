@@ -18,6 +18,7 @@
       <div class="header-title">ניהול תקציב פרסום</div>
       <div class="header-subtitle">מדור רישום — מכללת קיי</div>
     </div>
+    <span id="app-version" class="version-tag"></span>
   </div>
   <div class="header-actions no-print">
     <select id="year-select" class="year-select"></select>
@@ -30,85 +31,113 @@
 <div class="page">
 
   <!-- ═══════════ KPI CARDS ═══════════ -->
-  <div class="section-title">סיכום תקציבי</div>
-  <div id="kpi-grid" class="kpi-grid"></div>
+  <div class="section-block" data-section="kpis">
+    <div class="section-title" onclick="toggleSection('kpis')">
+      <span class="section-chevron">›</span>
+      סיכום תקציבי
+    </div>
+    <div class="section-body">
+      <div id="kpi-grid" class="kpi-grid"></div>
+    </div>
+  </div>
 
   <!-- ═══════════ CHARTS ═══════════ -->
-  <div class="section-title">גרפים</div>
-  <div class="charts-row">
-    <div class="chart-card">
-      <div class="chart-header">
-        <div>
-          <div class="chart-title">הוצאות חודשיות לפי ספק</div>
-          <div id="bar-legend" class="chart-legend"></div>
-        </div>
-        <div style="display:flex;gap:8px;align-items:center" class="no-print">
-          <select id="chart-dept-filter" class="filter-select" onchange="applyChartDeptFilter()">
-            <option value="">כל המחלקות</option>
-          </select>
-          <div class="view-toggle">
-            <button class="view-toggle-btn active" id="btn-stacked" onclick="setBarMode('stacked')">מוערם</button>
-            <button class="view-toggle-btn" id="btn-grouped" onclick="setBarMode('grouped')">זה לצד זה</button>
-          </div>
-        </div>
-      </div>
-      <canvas id="bar-chart"></canvas>
+  <div class="section-block" data-section="charts">
+    <div class="section-title" onclick="toggleSection('charts')">
+      <span class="section-chevron">›</span>
+      גרפים
     </div>
-    <div class="chart-card">
-      <div class="chart-header">
-        <div class="chart-title">התפלגות לפי ספק</div>
+    <div class="section-body">
+      <div class="charts-row">
+        <div class="chart-card">
+          <div class="chart-header">
+            <div>
+              <div class="chart-title">הוצאות חודשיות לפי ספק</div>
+              <div id="bar-legend" class="chart-legend"></div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center" class="no-print">
+              <select id="chart-dept-filter" class="filter-select" onchange="applyChartDeptFilter()">
+                <option value="">כל המחלקות</option>
+              </select>
+              <div class="view-toggle">
+                <button class="view-toggle-btn active" id="btn-stacked" onclick="setBarMode('stacked')">מוערם</button>
+                <button class="view-toggle-btn" id="btn-grouped" onclick="setBarMode('grouped')">זה לצד זה</button>
+              </div>
+            </div>
+          </div>
+          <canvas id="bar-chart"></canvas>
+        </div>
+        <div class="chart-card">
+          <div class="chart-header">
+            <div class="chart-title">התפלגות לפי ספק</div>
+          </div>
+          <canvas id="pie-chart"></canvas>
+        </div>
       </div>
-      <canvas id="pie-chart"></canvas>
     </div>
   </div>
 
   <!-- ═══════════ RESERVES ═══════════ -->
-  <div class="section-title">סכומים שמורים</div>
-  <div id="reserves-container" class="reserves-row"></div>
+  <div class="section-block" data-section="reserves">
+    <div class="section-title" onclick="toggleSection('reserves')">
+      <span class="section-chevron">›</span>
+      סכומים שמורים
+    </div>
+    <div class="section-body">
+      <div id="reserves-container" class="reserves-row"></div>
+    </div>
+  </div>
 
   <!-- ═══════════ JOURNAL ═══════════ -->
-  <div class="section-title">יומן תנועות</div>
-  <div class="journal-card">
-    <div class="journal-header">
-      <div class="month-carousel no-print">
-        <div id="month-pills" class="month-pills"></div>
-      </div>
-      <div class="no-print" style="display:flex;gap:8px">
-        <button class="btn btn-ghost" style="font-size:12px" onclick="printJournal()">🖨 הדפס</button>
-        <button class="btn btn-outline" style="font-size:12px" onclick="openTransactionModal(null)">+ תנועה חדשה</button>
-      </div>
+  <div class="section-block" data-section="journal">
+    <div class="section-title" onclick="toggleSection('journal')">
+      <span class="section-chevron">›</span>
+      יומן תנועות
     </div>
-    <div class="journal-filters no-print">
-      <span class="filter-label">סינון:</span>
-      <select id="filter-dept" class="filter-select" onchange="applyDeptFilter()">
-        <option value="">כל המחלקות</option>
-      </select>
-      <select id="filter-supplier" class="filter-select" onchange="applyFilters()">
-        <option value="">כל הספקים</option>
-      </select>
-      <select id="filter-status" class="filter-select" onchange="applyFilters()">
-        <option value="">כל הסטטוסים</option>
-      </select>
-      <button id="filter-duplicates" class="btn btn-ghost" style="font-size:12px;padding:4px 10px" onclick="toggleDuplicateFilter()">⚠ כפילויות</button>
-      <button class="btn btn-ghost" style="font-size:12px;padding:4px 10px" onclick="clearFilters()">✕ נקה</button>
-    </div>
-    <table class="journal-table">
-      <thead>
-        <tr>
-          <th>תאריך</th>
-          <th>ספק</th>
-          <th>מס׳ חשבונית</th>
-          <th>תיאור</th>
-          <th>סכום</th>
-          <th>סטטוס</th>
-          <th class="no-print"></th>
-        </tr>
-      </thead>
-      <tbody id="journal-tbody"></tbody>
-    </table>
-    <div class="journal-footer">
-      <div id="journal-count" style="font-size:12px;color:#727272"></div>
-      <div class="journal-footer-total">סה״כ: <strong id="journal-total"></strong></div>
+    <div class="section-body">
+      <div class="journal-card">
+        <div class="journal-header">
+          <div class="month-carousel no-print">
+            <div id="month-pills" class="month-pills"></div>
+          </div>
+          <div class="no-print" style="display:flex;gap:8px">
+            <button class="btn btn-ghost" style="font-size:12px" onclick="printJournal()">🖨 הדפס</button>
+            <button class="btn btn-outline" style="font-size:12px" onclick="openTransactionModal(null)">+ תנועה חדשה</button>
+          </div>
+        </div>
+        <div class="journal-filters no-print">
+          <span class="filter-label">סינון:</span>
+          <select id="filter-dept" class="filter-select" onchange="applyDeptFilter()">
+            <option value="">כל המחלקות</option>
+          </select>
+          <select id="filter-supplier" class="filter-select" onchange="applyFilters()">
+            <option value="">כל הספקים</option>
+          </select>
+          <select id="filter-status" class="filter-select" onchange="applyFilters()">
+            <option value="">כל הסטטוסים</option>
+          </select>
+          <button id="filter-duplicates" class="btn btn-ghost" style="font-size:12px;padding:4px 10px" onclick="toggleDuplicateFilter()">⚠ כפילויות</button>
+          <button class="btn btn-ghost" style="font-size:12px;padding:4px 10px" onclick="clearFilters()">✕ נקה</button>
+        </div>
+        <table class="journal-table">
+          <thead>
+            <tr>
+              <th>תאריך</th>
+              <th>ספק</th>
+              <th>מס׳ חשבונית</th>
+              <th>תיאור</th>
+              <th>סכום</th>
+              <th>סטטוס</th>
+              <th class="no-print"></th>
+            </tr>
+          </thead>
+          <tbody id="journal-tbody"></tbody>
+        </table>
+        <div class="journal-footer">
+          <div id="journal-count" style="font-size:12px;color:#727272"></div>
+          <div class="journal-footer-total">סה״כ: <strong id="journal-total"></strong></div>
+        </div>
+      </div>
     </div>
   </div>
 
