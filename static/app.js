@@ -482,9 +482,10 @@ function renderFilterSelects() {
   const stSel  = document.getElementById('filter-status');
 
   // Populate dept filter
-  const depts = [...new Set(APP.raw.transactions.map(r => r['מחלקה']).filter(Boolean))].sort();
   deptSel.innerHTML = '<option value="">כל המחלקות</option>' +
-    depts.map(d => `<option value="${d}">${d}</option>`).join('');
+    APP.raw.departments.map(d =>
+      `<option value="${escHtml(d['שם'])}">${escHtml(d['שם'])}</option>`
+    ).join('');
 
   supSel.innerHTML = '<option value="">כל הספקים</option>' +
     APP.raw.suppliers.filter(s => s['פעיל'] === 'TRUE')
