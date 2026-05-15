@@ -185,6 +185,23 @@
   </div>
 </div>
 
+<!-- ═══════════ MANAGE DEPARTMENTS MODAL ═══════════ -->
+<div id="departments-modal" class="modal-overlay hidden" onclick="if(event.target===this)closeManageDepartments()">
+  <div class="modal modal-sm" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <span>ניהול מחלקות</span>
+      <button class="modal-close" aria-label="סגור" onclick="closeManageDepartments()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="departments-list"></div>
+      <div class="add-row">
+        <input type="text" id="new-dept-name" class="form-input" placeholder="שם מחלקה חדשה">
+        <button class="btn btn-primary btn-sm" onclick="addDepartment()">הוסף</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ═══════════ SETTINGS PANEL ═══════════ -->
 <div id="settings-overlay" class="modal-overlay hidden" onclick="closeSettings(event)">
   <div class="settings-panel" onclick="event.stopPropagation()">

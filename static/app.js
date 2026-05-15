@@ -653,6 +653,22 @@ function _restoreTransactionForm() {
   `;
 }
 
+let _supplierDept = '';
+
+function changeTxnDept(deptName) {
+  _supplierDept = deptName;
+  const supInput  = document.getElementById('txn-supplier-input');
+  const supHidden = document.getElementById('txn-supplier');
+  if (!supInput || !supHidden) return;
+  const options = APP.raw.suppliers
+    .filter(s => s['פעיל'] === 'TRUE' && s['מחלקה'] === deptName)
+    .map(s => s['שם']);
+  if (!options.includes(supHidden.value)) {
+    supInput.value  = '';
+    supHidden.value = '';
+  }
+}
+
 function openTransactionModal(id) {
   _restoreTransactionForm();
 
@@ -854,6 +870,84 @@ async function deleteStatus(id, name) {
     body: JSON.stringify({ type: 'status', action: 'delete', id }) });
   APP.raw.statuses = APP.raw.statuses.filter(s => s.id !== id);
   renderStatusesList();
+}
+
+// ═══════════════════════════════════════════════════════
+// MANAGE DEPARTMENTS
+// ═══════════════════════════════════════════════════════
+function openManageDepartments() {
+  renderDepartmentsList();
+  document.getElementById('departments-modal').classList.remove('hidden');
+}
+
+function closeManageDepartments() {
+  document.getElementById('departments-modal').classList.add('hidden');
+  const deptSel = document.getElementById('txn-dept');
+  if (!deptSel) return;
+  const currentVal = deptSel.value;
+  deptSel.innerHTML = APP.raw.departments.map(d =>
+    `<option value="${escHtml(d['שם'])}">${escHtml(d['שם'])}</option>`
+  ).join('');
+  if (APP.raw.departments.some(d => d['שם'] === currentVal)) {
+    deptSel.value = currentVal;
+  } else if (APP.raw.departments.length > 0) {
+    deptSel.value = APP.raw.departments[0]['שם'];
+    changeTxnDept(APP.raw.departments[0]['שם']);
+  }
+}
+
+function renderDepartmentsList() {
+  const defaultDept = APP.raw.departments.find(d => d['ברירת_מחדל'] === 'TRUE');
+  document.getElementById('departments-list').innerHTML =
+    APP.raw.departments.map(d => `
+      <div class="manage-item">
+        <div style="display:flex;align-items:center;gap:8px">
+          <input type="radio" name="dept-default" value="${escHtml(d.id)}"
+            ${d.id === (defaultDept || {}).id ? 'checked' : ''}
+            onchange="setDefaultDept('${escHtml(d.id)}')">
+          <span>${escHtml(d['שם'])}</span>
+        </div>
+        <div class="manage-item-actions">
+          <button class="action-btn del" data-id="${escHtml(d.id)}" data-name="${escHtml(d['שם'])}"
+            onclick="deleteDepartment(this.dataset.id, this.dataset.name)">✕</button>
+        </div>
+      </div>`).join('');
+}
+
+async function addDepartment() {
+  const name = document.getElementById('new-dept-name').value.trim();
+  if (!name) return;
+  const row = { id: String(Date.now()), שם: name, ברירת_מחדל: 'FALSE' };
+  await fetch('/api/settings', { method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ type: 'department', action: 'create', row }) });
+  APP.raw.departments.push(row);
+  document.getElementById('new-dept-name').value = '';
+  renderDepartmentsList();
+}
+
+async function setDefaultDept(id) {
+  const prev = APP.raw.departments.find(d => d['ברירת_מחדל'] === 'TRUE');
+  if (prev && prev.id !== id) {
+    const prevRow = { ...prev, ברירת_מחדל: 'FALSE' };
+    await fetch('/api/settings', { method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ type: 'department', action: 'update', row: prevRow }) });
+    prev['ברירת_מחדל'] = 'FALSE';
+  }
+  const next = APP.raw.departments.find(d => d.id === id);
+  if (next) {
+    const nextRow = { ...next, ברירת_מחדל: 'TRUE' };
+    await fetch('/api/settings', { method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ type: 'department', action: 'update', row: nextRow }) });
+    next['ברירת_מחדל'] = 'TRUE';
+  }
+}
+
+async function deleteDepartment(id, name) {
+  if (!confirm(`למחוק את המחלקה "${name}"?`)) return;
+  await fetch('/api/settings', { method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ type: 'department', action: 'delete', id }) });
+  APP.raw.departments = APP.raw.departments.filter(d => d.id !== id);
+  renderDepartmentsList();
 }
 
 // ═══════════════════════════════════════════════════════
