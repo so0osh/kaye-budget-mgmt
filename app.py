@@ -103,9 +103,10 @@ def create_app(config=None):
         try:
             if request.method == 'GET':
                 return jsonify({
-                    'suppliers': sheets._read_sheet('suppliers'),
-                    'statuses':  sheets._read_sheet('statuses'),
-                    'budget':    sheets._read_sheet('budget'),
+                    'suppliers':   sheets._read_sheet('suppliers'),
+                    'statuses':    sheets._read_sheet('statuses'),
+                    'budget':      sheets._read_sheet('budget'),
+                    'departments': sheets._read_sheet('departments'),
                 })
 
             body = request.get_json(silent=True)
