@@ -50,7 +50,7 @@ function _applySectionState(key, expanded, animate) {
     }, { once: true });
   } else {
     body.style.maxHeight = body.scrollHeight + 'px';
-    requestAnimationFrame(() => { body.style.maxHeight = '0'; });
+    requestAnimationFrame(() => { requestAnimationFrame(() => { body.style.maxHeight = '0'; }); });
   }
 }
 
