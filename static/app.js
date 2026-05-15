@@ -2,14 +2,30 @@
 // STATE
 // ═══════════════════════════════════════════════════════
 const APP = {
-  raw:    null,          // full data from /api/data
-  year:   null,          // selected year string e.g. '2025/2026'
-  month:  null,          // { year, month } or null for 'all'
-  filter: { supplier: '', status: '' },
-  charts: { bar: null, pie: null },
-  colors: {},            // supplierName -> hex color
-  pendingDelete: null,   // { fn } waiting for confirm
+  raw:          null,          // full data from /api/data
+  year:         null,          // selected year string e.g. '2025/2026'
+  month:        null,          // { year, month } or null for 'all'
+  filter:       { supplier: '', status: '', dept: '', duplicates: false, chartDept: '' },
+  charts:       { bar: null, pie: null },
+  colors:       {},            // supplierName -> hex color
+  pendingDelete: null,         // { fn } waiting for confirm
+  duplicateIds: new Set(),
+  version:      '',
 };
+
+function computeDuplicateIds() {
+  const counts = {};
+  APP.raw.transactions.forEach(r => {
+    if (!r['מס_חשבונית']) return;
+    const key = r['ספק'] + '::' + r['מס_חשבונית'];
+    if (!counts[key]) counts[key] = [];
+    counts[key].push(r.id);
+  });
+  APP.duplicateIds = new Set();
+  Object.values(counts).forEach(ids => {
+    if (ids.length > 1) ids.forEach(id => APP.duplicateIds.add(id));
+  });
+}
 
 const PALETTE = [
   '#1594a0','#cd3468','#e08c1a','#2bac76',
@@ -88,6 +104,7 @@ function initYearSelector() {
 // RENDER ORCHESTRATOR
 // ═══════════════════════════════════════════════════════
 function render() {
+  computeDuplicateIds();
   renderKPIs();
   renderCharts();
   renderReserves();
@@ -460,8 +477,14 @@ function selectMonth(month, year) {
 // JOURNAL — FILTERS
 // ═══════════════════════════════════════════════════════
 function renderFilterSelects() {
+  const deptSel = document.getElementById('filter-dept');
   const supSel = document.getElementById('filter-supplier');
   const stSel  = document.getElementById('filter-status');
+
+  // Populate dept filter
+  const depts = [...new Set(APP.raw.transactions.map(r => r['מחלקה']).filter(Boolean))].sort();
+  deptSel.innerHTML = '<option value="">כל המחלקות</option>' +
+    depts.map(d => `<option value="${d}">${d}</option>`).join('');
 
   supSel.innerHTML = '<option value="">כל הספקים</option>' +
     APP.raw.suppliers.filter(s => s['פעיל'] === 'TRUE')
@@ -470,6 +493,7 @@ function renderFilterSelects() {
   stSel.innerHTML = '<option value="">כל הסטטוסים</option>' +
     APP.raw.statuses.map(s => `<option value="${s['שם']}">${s['שם']}</option>`).join('');
 
+  deptSel.value = APP.filter.dept;
   supSel.value = APP.filter.supplier;
   stSel.value  = APP.filter.status;
 }
@@ -480,8 +504,28 @@ function applyFilters() {
   renderJournal();
 }
 
+function toggleDuplicateFilter() {
+  APP.filter.duplicates = !APP.filter.duplicates;
+  const btn = document.getElementById('filter-duplicates');
+  btn.style.borderColor = APP.filter.duplicates ? '#e08c1a' : '';
+  btn.style.color       = APP.filter.duplicates ? '#e08c1a' : '';
+  renderJournal();
+}
+
+function applyDeptFilter() {
+  APP.filter.dept = document.getElementById('filter-dept').value;
+  APP.filter.supplier = '';
+  renderFilterSelects();
+  renderJournal();
+}
+
 function clearFilters() {
-  APP.filter = { supplier: '', status: '' };
+  APP.filter.supplier  = '';
+  APP.filter.status    = '';
+  APP.filter.dept      = '';
+  APP.filter.duplicates = false;
+  const btn = document.getElementById('filter-duplicates');
+  if (btn) { btn.style.borderColor = ''; btn.style.color = ''; }
   renderFilterSelects();
   renderJournal();
 }
@@ -500,6 +544,8 @@ function getFilteredTransactions() {
   }
   if (APP.filter.supplier) rows = rows.filter(r => r['ספק'] === APP.filter.supplier);
   if (APP.filter.status)   rows = rows.filter(r => r['סטטוס'] === APP.filter.status);
+  if (APP.filter.duplicates) rows = rows.filter(r => APP.duplicateIds.has(r.id));
+  if (APP.filter.dept)       rows = rows.filter(r => r['מחלקה'] === APP.filter.dept);
 
   return rows.sort((a, b) => {
     const parse = s => { const [d,m,y] = s.split('/').map(Number); return new Date(y,m-1,d); };
@@ -513,14 +559,16 @@ function renderJournal() {
   const tbody = document.getElementById('journal-tbody');
 
   tbody.innerHTML = rows.map(r => {
-    const color  = APP.colors[r['ספק']] || '#ccc';
-    const status = APP.raw.statuses.find(s => s['שם'] === r['סטטוס']);
+    const color      = APP.colors[r['ספק']] || '#ccc';
+    const status     = APP.raw.statuses.find(s => s['שם'] === r['סטטוס']);
     const badgeColor = status ? status['צבע'] : '#727272';
     const badgeBg    = badgeColor + '22';
-    return `<tr>
+    const isDup      = APP.duplicateIds.has(r.id);
+    const dupBadge   = isDup ? '<span class="dup-badge">כפול</span>' : '';
+    return `<tr class="${isDup ? 'row-duplicate' : ''}">
       <td>${r['תאריך']}</td>
       <td><span class="supplier-dot" style="background:${color}"></span>${escHtml(r['ספק'])}</td>
-      <td style="color:#727272;font-size:12px">${escHtml(r['מס_חשבונית'] || '—')}</td>
+      <td style="color:#727272;font-size:12px">${escHtml(r['מס_חשבונית'] || '—')} ${dupBadge}</td>
       <td style="color:#727272">${escHtml(r['תיאור'] || '')}</td>
       <td class="amount-cell">₪${parseFloat(r['סכום']).toLocaleString()}</td>
       <td><span class="status-badge" style="background:${badgeBg};color:${badgeColor}">${escHtml(r['סטטוס'])}</span></td>

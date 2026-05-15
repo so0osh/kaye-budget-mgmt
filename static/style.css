@@ -193,6 +193,21 @@ body {
 .journal-table tr:hover td { background: #f6fafd; }
 .journal-table .confirm-row td { background: #fce8ee; }
 
+/* Duplicate row highlighting */
+.row-duplicate td { background: #fff8e1; }
+.row-duplicate { border-right: 3px solid #e08c1a; }
+.dup-badge {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 600;
+  background: #fff3e0;
+  color: #b86d00;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+
 .amount-cell   { font-weight: 700; font-size: 14px; direction: ltr; text-align: end; white-space: nowrap; }
 .supplier-dot  { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-left: 6px; }
 .status-badge  { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }

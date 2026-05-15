@@ -75,12 +75,16 @@
     </div>
     <div class="journal-filters no-print">
       <span class="filter-label">סינון:</span>
+      <select id="filter-dept" class="filter-select" onchange="applyDeptFilter()">
+        <option value="">כל המחלקות</option>
+      </select>
       <select id="filter-supplier" class="filter-select" onchange="applyFilters()">
         <option value="">כל הספקים</option>
       </select>
       <select id="filter-status" class="filter-select" onchange="applyFilters()">
         <option value="">כל הסטטוסים</option>
       </select>
+      <button id="filter-duplicates" class="btn btn-ghost" style="font-size:12px;padding:4px 10px" onclick="toggleDuplicateFilter()">⚠ כפילויות</button>
       <button class="btn btn-ghost" style="font-size:12px;padding:4px 10px" onclick="clearFilters()">✕ נקה</button>
     </div>
     <table class="journal-table">
