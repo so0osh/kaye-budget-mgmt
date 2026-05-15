@@ -717,9 +717,11 @@ function cancelDelete() {
 // TRANSACTION MODAL
 // ═══════════════════════════════════════════════════════
 function _restoreTransactionForm() {
-  const deptOptions = APP.raw.departments.map(d =>
-    `<option value="${escHtml(d['שם'])}">${escHtml(d['שם'])}</option>`
-  ).join('');
+  const deptOptions = APP.raw.departments.length
+    ? APP.raw.departments.map(d =>
+        `<option value="${escHtml(d['שם'])}">${escHtml(d['שם'])}</option>`
+      ).join('')
+    : '<option value="" disabled selected>— הוסף מחלקה תחילה —</option>';
 
   document.querySelector('.modal-body').innerHTML = `
     <input type="hidden" id="txn-id">
@@ -843,10 +845,6 @@ function buildCombobox(inputEl, hiddenEl, getOptions) {
 }
 
 function openTransactionModal(id) {
-  if (!APP.raw.departments.length) {
-    alert('יש להוסיף מחלקה לפני הוספת תנועה. פתח "נהל מחלקות" בהגדרות.');
-    return;
-  }
   _restoreTransactionForm();
 
   const fp = flatpickr('#txn-date', {
@@ -1119,13 +1117,17 @@ function closeManageDepartments() {
   const deptSel = document.getElementById('txn-dept');
   if (!deptSel) return;
   const currentVal = deptSel.value;
+  if (!APP.raw.departments.length) {
+    deptSel.innerHTML = '<option value="" disabled selected>— הוסף מחלקה תחילה —</option>';
+    return;
+  }
   deptSel.innerHTML = APP.raw.departments.map(d =>
     `<option value="${escHtml(d['שם'])}">${escHtml(d['שם'])}</option>`
   ).join('');
   if (APP.raw.departments.some(d => d['שם'] === currentVal)) {
     deptSel.value = currentVal;
     changeTxnDept(currentVal);
-  } else if (APP.raw.departments.length > 0) {
+  } else {
     deptSel.value = APP.raw.departments[0]['שם'];
     changeTxnDept(APP.raw.departments[0]['שם']);
   }
