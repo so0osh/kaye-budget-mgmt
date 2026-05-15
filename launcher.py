@@ -131,7 +131,7 @@ def _apply_update(release, pat):
 def _setup_worker(set_status, set_error, close):
     try:
         # 1. Read config
-        set_status("LOADING CONFIG")
+        set_status("טוען הגדרות")  # "LOADING CONFIG"
         cfg   = _read_config(os.path.join(APP_DIR, "config.json"))
         pat   = cfg.get("github_pat", "")
         debug = cfg.get("debug", False)
@@ -139,9 +139,9 @@ def _setup_worker(set_status, set_error, close):
         # 2. Check for updates (skipped in debug mode)
         version_path = os.path.join(APP_DIR, "version.txt")
         if debug:
-            set_status("DEBUG MODE — SKIPPING UPDATE CHECK")
+            set_status("מצב פיתוח — מדלג על בדיקת עדכונים")  # "DEBUG MODE — SKIPPING UPDATE CHECK"
         else:
-            set_status("CHECKING FOR UPDATES")
+            set_status("בודק עדכונים")  # "CHECKING FOR UPDATES"
             if os.path.exists(version_path):
                 with open(version_path) as f:
                     current = f.read().strip()
@@ -161,7 +161,7 @@ def _setup_worker(set_status, set_error, close):
 
             # 3. Apply update if newer version available
             if _needs_update(current, latest):
-                set_status("DOWNLOADING UPDATE")
+                set_status("מוריד עדכון")  # "DOWNLOADING UPDATE"
                 _apply_update(release, pat)
                 with open(version_path, "w") as f:
                     f.write(latest)
@@ -172,17 +172,17 @@ def _setup_worker(set_status, set_error, close):
         py_exe    = os.path.join(venv_path, "Scripts", "python.exe")
 
         if not os.path.exists(pip_exe):
-            set_status("SETTING UP ENVIRONMENT")
+            set_status("מכין סביבת עבודה")  # "SETTING UP ENVIRONMENT"
             subprocess.run([sys.executable, "-m", "venv", "--clear", venv_path], check=True)
 
         # 5. Install / sync dependencies
-        set_status("INSTALLING DEPENDENCIES")
+        set_status("מתקין תלויות")  # "INSTALLING DEPENDENCIES"
         subprocess.run(
             [pip_exe, "install", "-r", os.path.join(APP_DIR, "requirements.txt"), "--quiet"],
             check=True)
 
         # 6. Evict any stale server, then start fresh
-        set_status("STARTING SERVER")
+        set_status("מפעיל שרת")  # "STARTING SERVER"
         _kill_port(13885)
         extra = {"creationflags": CREATE_NO_WINDOW} if sys.platform == "win32" else {}
         subprocess.Popen(
@@ -191,7 +191,7 @@ def _setup_worker(set_status, set_error, close):
             **extra)
 
         # 7. Poll until server responds (app.py opens the browser via its own Timer)
-        set_status("WAITING FOR SERVER")
+        set_status("ממתין לשרת")  # "WAITING FOR SERVER"
         deadline = time.monotonic() + 60
         while True:
             try:
@@ -205,7 +205,7 @@ def _setup_worker(set_status, set_error, close):
         close()
 
     except Exception as exc:
-        set_error(f"ERROR: {exc}")
+        set_error(f"שגיאה: {exc}")  # f"ERROR: {exc}"
 
 
 # ── Splash UI ─────────────────────────────────────────────────────────────────
@@ -272,7 +272,7 @@ class _SplashApp:
                      ).pack(anchor="w", pady=(0, 20))
         tk.Frame(inner, height=1, width=220, bg=DIVIDER).pack(anchor="w", pady=(0, 24))
 
-        self._status_var = tk.StringVar(value="LOADING")
+        self._status_var = tk.StringVar(value="טוען")  # "LOADING"
         self._status_lbl = tk.Label(inner, textvariable=self._status_var,
                                     font=("Segoe UI Light", 10), fg=SLATE, bg=BG_RIGHT)
         self._status_lbl.pack(anchor="w")
