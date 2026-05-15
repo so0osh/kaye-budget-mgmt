@@ -288,6 +288,33 @@ body {
 .year-manage-item strong { min-width: 90px; }
 .year-manage-item .form-input { padding: 4px 8px; font-size: 12px; }
 
+/* ── Supplier Combobox ── */
+.combobox-wrap { position: relative; }
+.combobox-list {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  left: 0;
+  z-index: 300;
+  background: #fff;
+  border: 1.5px solid #d1d1d1;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+  max-height: 200px;
+  overflow-y: auto;
+  margin-top: 2px;
+}
+.combobox-list.hidden { display: none; }
+.combobox-item {
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 14px;
+  font-family: 'Heebo', sans-serif;
+  text-align: right;
+}
+.combobox-item:hover,
+.combobox-item.active { background: #f0f9fa; color: #1594a0; }
+
 /* ── Utilities ── */
 .hidden { display: none !important; }
 .mb-24  { margin-bottom: 24px; }

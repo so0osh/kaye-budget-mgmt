@@ -620,6 +620,10 @@ function cancelDelete() {
 // TRANSACTION MODAL
 // ═══════════════════════════════════════════════════════
 function _restoreTransactionForm() {
+  const deptOptions = APP.raw.departments.map(d =>
+    `<option value="${escHtml(d['שם'])}">${escHtml(d['שם'])}</option>`
+  ).join('');
+
   document.querySelector('.modal-body').innerHTML = `
     <input type="hidden" id="txn-id">
     <div class="form-row">
@@ -627,8 +631,16 @@ function _restoreTransactionForm() {
       <input type="text" id="txn-date" class="form-input" placeholder="dd/mm/yyyy" readonly>
     </div>
     <div class="form-row">
+      <label>מחלקה <button class="link-btn no-print" onclick="openManageDepartments()">נהל מחלקות</button></label>
+      <select id="txn-dept" class="form-input" onchange="changeTxnDept(this.value)">${deptOptions}</select>
+    </div>
+    <div class="form-row">
       <label>ספק <button class="link-btn no-print" onclick="openManageSuppliers()">נהל ספקים</button></label>
-      <select id="txn-supplier" class="form-input"></select>
+      <div class="combobox-wrap">
+        <input type="text" id="txn-supplier-input" class="form-input" placeholder="הקלד לחיפוש ספק..." autocomplete="off">
+        <input type="hidden" id="txn-supplier">
+        <div id="txn-supplier-list" class="combobox-list hidden"></div>
+      </div>
     </div>
     <div class="form-row">
       <label>מס׳ חשבונית</label>
@@ -669,6 +681,69 @@ function changeTxnDept(deptName) {
   }
 }
 
+// ═══════════════════════════════════════════════════════
+// SUPPLIER COMBOBOX
+// ═══════════════════════════════════════════════════════
+function buildCombobox(inputEl, hiddenEl, getOptions) {
+  const listEl = document.getElementById(inputEl.id + '-list');
+
+  function renderList() {
+    const query = inputEl.value.toLowerCase();
+    const opts  = getOptions().filter(o => o.toLowerCase().includes(query));
+    listEl.innerHTML = opts.map(o =>
+      `<div class="combobox-item" data-value="${escHtml(o)}">${escHtml(o)}</div>`
+    ).join('');
+    listEl.classList.toggle('hidden', opts.length === 0);
+  }
+
+  function selectOption(value) {
+    inputEl.value  = value;
+    hiddenEl.value = value;
+    listEl.classList.add('hidden');
+  }
+
+  inputEl.addEventListener('input',  renderList);
+  inputEl.addEventListener('focus',  renderList);
+
+  inputEl.addEventListener('blur', () => {
+    setTimeout(() => {
+      if (!getOptions().includes(inputEl.value)) {
+        inputEl.value  = '';
+        hiddenEl.value = '';
+      }
+      listEl.classList.add('hidden');
+    }, 150);
+  });
+
+  inputEl.addEventListener('keydown', e => {
+    const items    = [...listEl.querySelectorAll('.combobox-item')];
+    const activeEl = listEl.querySelector('.combobox-item.active');
+    const activeIdx = items.indexOf(activeEl);
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      items.forEach(el => el.classList.remove('active'));
+      const next = items[(activeIdx + 1) % items.length];
+      if (next) next.classList.add('active');
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      items.forEach(el => el.classList.remove('active'));
+      const prev = items[(activeIdx - 1 + items.length) % items.length];
+      if (prev) prev.classList.add('active');
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (activeEl) selectOption(activeEl.dataset.value);
+    } else if (e.key === 'Escape') {
+      listEl.classList.add('hidden');
+    }
+  });
+
+  listEl.addEventListener('mousedown', e => {
+    const item = e.target.closest('.combobox-item');
+    if (item) selectOption(item.dataset.value);
+  });
+}
+
 function openTransactionModal(id) {
   _restoreTransactionForm();
 
@@ -678,26 +753,37 @@ function openTransactionModal(id) {
     disableMobile: true,
   });
 
-  const overlay = document.getElementById('modal-overlay');
-  overlay.classList.remove('hidden');
-
-  // Populate supplier dropdown
-  const supSel = document.getElementById('txn-supplier');
-  supSel.innerHTML = APP.raw.suppliers
-    .filter(s => s['פעיל'] === 'TRUE')
-    .map(s => `<option value="${s['שם']}">${s['שם']}</option>`).join('');
+  // Build combobox — reads _supplierDept dynamically each keystroke
+  const supInput  = document.getElementById('txn-supplier-input');
+  const supHidden = document.getElementById('txn-supplier');
+  buildCombobox(supInput, supHidden, () =>
+    APP.raw.suppliers
+      .filter(s => s['פעיל'] === 'TRUE' && s['מחלקה'] === _supplierDept)
+      .map(s => s['שם'])
+  );
 
   // Populate status dropdown
-  const stSel = document.getElementById('txn-status');
-  stSel.innerHTML = APP.raw.statuses
-    .map(s => `<option value="${s['שם']}">${s['שם']}</option>`).join('');
+  document.getElementById('txn-status').innerHTML = APP.raw.statuses
+    .map(s => `<option value="${escHtml(s['שם'])}">${escHtml(s['שם'])}</option>`).join('');
+
+  document.getElementById('modal-overlay').classList.remove('hidden');
+
+  const deptSel = document.getElementById('txn-dept');
 
   if (id) {
     const r = APP.raw.transactions.find(t => t.id === id);
     document.getElementById('modal-title').textContent = 'עריכת תנועה';
-    document.getElementById('txn-id').value          = r.id;
+    document.getElementById('txn-id').value            = r.id;
     fp.setDate(r['תאריך'], false, 'd/m/Y');
-    document.getElementById('txn-supplier').value    = r['ספק'];
+
+    // Set dept first so _supplierDept is correct before setting supplier
+    _supplierDept    = r['מחלקה'] || '';
+    deptSel.value    = r['מחלקה'] || '';
+
+    // Set supplier after dept
+    supInput.value   = r['ספק'];
+    supHidden.value  = r['ספק'];
+
     document.getElementById('txn-invoice').value     = r['מס_חשבונית'];
     document.getElementById('txn-description').value = r['תיאור'];
     document.getElementById('txn-amount').value      = r['סכום'];
@@ -705,25 +791,38 @@ function openTransactionModal(id) {
   } else {
     document.getElementById('modal-title').textContent = 'הוספת תנועה';
     fp.setDate(new Date(), true);
+
+    const defaultDept = APP.raw.departments.find(d => d['ברירת_מחדל'] === 'TRUE')
+                     || APP.raw.departments[0]
+                     || null;
+    if (defaultDept) {
+      deptSel.value = defaultDept['שם'];
+      _supplierDept = defaultDept['שם'];
+    } else {
+      _supplierDept = '';
+    }
   }
 }
 
 
 async function saveTransaction() {
-  const id      = document.getElementById('txn-id').value;
-  const dateVal = document.getElementById('txn-date').value;
-  const amount  = document.getElementById('txn-amount').value;
-  if (!dateVal || !amount) return;
+  const id       = document.getElementById('txn-id').value;
+  const dateVal  = document.getElementById('txn-date').value;
+  const amount   = document.getElementById('txn-amount').value;
+  const dept     = document.getElementById('txn-dept').value;
+  const supplier = document.getElementById('txn-supplier').value;
+  if (!dateVal || !amount || !dept || !supplier) return;
 
   const row = {
     id:          id || String(Date.now()),
     שנה:         APP.year,
     תאריך:       dateVal,
-    ספק:         document.getElementById('txn-supplier').value,
+    ספק:         supplier,
     מס_חשבונית: document.getElementById('txn-invoice').value.trim(),
     תיאור:       document.getElementById('txn-description').value.trim(),
     סכום:        amount,
     סטטוס:       document.getElementById('txn-status').value,
+    מחלקה:       dept,
   };
   const action = id ? 'update' : 'create';
 
@@ -767,13 +866,6 @@ function openManageSuppliers() {
 function closeManageSuppliers() {
   document.getElementById('suppliers-modal').classList.add('hidden');
   renderFilterSelects();
-  // Refresh supplier dropdown in transaction modal if open
-  const supSel = document.getElementById('txn-supplier');
-  if (supSel) {
-    supSel.innerHTML = APP.raw.suppliers
-      .filter(s => s['פעיל'] === 'TRUE')
-      .map(s => `<option value="${s['שם']}">${s['שם']}</option>`).join('');
-  }
 }
 
 function renderSuppliersList() {

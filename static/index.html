@@ -120,11 +120,19 @@
       <input type="hidden" id="txn-id">
       <div class="form-row">
         <label for="txn-date">תאריך</label>
-        <input type="date" id="txn-date" class="form-input">
+        <input type="text" id="txn-date" class="form-input" placeholder="dd/mm/yyyy" readonly>
       </div>
       <div class="form-row">
-        <label for="txn-supplier">ספק <button class="link-btn no-print" onclick="openManageSuppliers()">נהל ספקים</button></label>
-        <select id="txn-supplier" class="form-input"></select>
+        <label for="txn-dept">מחלקה</label>
+        <select id="txn-dept" class="form-input"></select>
+      </div>
+      <div class="form-row">
+        <label>ספק</label>
+        <div class="combobox-wrap">
+          <input type="text" id="txn-supplier-input" class="form-input" placeholder="הקלד לחיפוש ספק..." autocomplete="off">
+          <input type="hidden" id="txn-supplier">
+          <div id="txn-supplier-list" class="combobox-list hidden"></div>
+        </div>
       </div>
       <div class="form-row">
         <label for="txn-invoice">מס׳ חשבונית</label>
@@ -139,7 +147,7 @@
         <input type="number" id="txn-amount" class="form-input" min="0" step="0.01" placeholder="0.00">
       </div>
       <div class="form-row">
-        <label for="txn-status">סטטוס <button class="link-btn no-print" onclick="openManageStatuses()">נהל סטטוסים</button></label>
+        <label for="txn-status">סטטוס</label>
         <select id="txn-status" class="form-input"></select>
       </div>
     </div>
