@@ -890,6 +890,7 @@ function closeManageDepartments() {
   ).join('');
   if (APP.raw.departments.some(d => d['שם'] === currentVal)) {
     deptSel.value = currentVal;
+    changeTxnDept(currentVal);
   } else if (APP.raw.departments.length > 0) {
     deptSel.value = APP.raw.departments[0]['שם'];
     changeTxnDept(APP.raw.departments[0]['שם']);
