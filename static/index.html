@@ -42,9 +42,14 @@
           <div class="chart-title">הוצאות חודשיות לפי ספק</div>
           <div id="bar-legend" class="chart-legend"></div>
         </div>
-        <div class="view-toggle no-print">
-          <button class="view-toggle-btn active" id="btn-stacked" onclick="setBarMode('stacked')">מוערם</button>
-          <button class="view-toggle-btn" id="btn-grouped" onclick="setBarMode('grouped')">זה לצד זה</button>
+        <div style="display:flex;gap:8px;align-items:center" class="no-print">
+          <select id="chart-dept-filter" class="filter-select" onchange="applyChartDeptFilter()">
+            <option value="">כל המחלקות</option>
+          </select>
+          <div class="view-toggle">
+            <button class="view-toggle-btn active" id="btn-stacked" onclick="setBarMode('stacked')">מוערם</button>
+            <button class="view-toggle-btn" id="btn-grouped" onclick="setBarMode('grouped')">זה לצד זה</button>
+          </div>
         </div>
       </div>
       <canvas id="bar-chart"></canvas>

@@ -106,6 +106,7 @@ function initYearSelector() {
 function render() {
   computeDuplicateIds();
   renderKPIs();
+  initChartDeptFilter();
   renderCharts();
   renderReserves();
   renderCarousel();
@@ -235,9 +236,18 @@ function buildChartData() {
   const endMonth = parseInt(cfg['חודש_סיום']) || 8;
   const months   = getYearMonths(APP.year, endMonth);
   const txns     = APP.raw.transactions.filter(r => r['שנה'] === APP.year);
-  const active   = APP.raw.suppliers.filter(s => s['פעיל'] === 'TRUE').map(s => s['שם']);
 
-  const labels   = months.map(({ year, month }) => HEB_MONTHS[month]);
+  let active = APP.raw.suppliers.filter(s => s['פעיל'] === 'TRUE').map(s => s['שם']);
+  if (APP.filter.chartDept) {
+    const deptSet = new Set(
+      APP.raw.suppliers
+        .filter(s => s['פעיל'] === 'TRUE' && s['מחלקה'] === APP.filter.chartDept)
+        .map(s => s['שם'])
+    );
+    active = active.filter(name => deptSet.has(name));
+  }
+
+  const labels   = months.map(({ month }) => HEB_MONTHS[month]);
   const datasets = active.map(sup => ({
     label:           sup,
     backgroundColor: APP.colors[sup] || '#ccc',
@@ -257,6 +267,22 @@ function buildChartData() {
   );
 
   return { labels, datasets, active, totals };
+}
+
+function initChartDeptFilter() {
+  const sel = document.getElementById('chart-dept-filter');
+  if (!sel) return;
+  const current = sel.value;
+  sel.innerHTML = '<option value="">כל המחלקות</option>' +
+    APP.raw.departments.map(d =>
+      `<option value="${escHtml(d['שם'])}">${escHtml(d['שם'])}</option>`
+    ).join('');
+  sel.value = current;
+}
+
+function applyChartDeptFilter() {
+  APP.filter.chartDept = document.getElementById('chart-dept-filter').value;
+  renderCharts();
 }
 
 // ═══════════════════════════════════════════════════════
@@ -478,25 +504,30 @@ function selectMonth(month, year) {
 // ═══════════════════════════════════════════════════════
 function renderFilterSelects() {
   const deptSel = document.getElementById('filter-dept');
-  const supSel = document.getElementById('filter-supplier');
-  const stSel  = document.getElementById('filter-status');
+  const supSel  = document.getElementById('filter-supplier');
+  const stSel   = document.getElementById('filter-status');
 
-  // Populate dept filter
   deptSel.innerHTML = '<option value="">כל המחלקות</option>' +
     APP.raw.departments.map(d =>
       `<option value="${escHtml(d['שם'])}">${escHtml(d['שם'])}</option>`
     ).join('');
+  deptSel.value = APP.filter.dept;
+
+  const filteredSuppliers = APP.filter.dept
+    ? APP.raw.suppliers.filter(s => s['פעיל'] === 'TRUE' && s['מחלקה'] === APP.filter.dept)
+    : APP.raw.suppliers.filter(s => s['פעיל'] === 'TRUE');
 
   supSel.innerHTML = '<option value="">כל הספקים</option>' +
-    APP.raw.suppliers.filter(s => s['פעיל'] === 'TRUE')
-      .map(s => `<option value="${s['שם']}">${s['שם']}</option>`).join('');
+    filteredSuppliers.map(s =>
+      `<option value="${escHtml(s['שם'])}">${escHtml(s['שם'])}</option>`
+    ).join('');
+  supSel.value = APP.filter.supplier;
 
   stSel.innerHTML = '<option value="">כל הסטטוסים</option>' +
-    APP.raw.statuses.map(s => `<option value="${s['שם']}">${s['שם']}</option>`).join('');
-
-  deptSel.value = APP.filter.dept;
-  supSel.value = APP.filter.supplier;
-  stSel.value  = APP.filter.status;
+    APP.raw.statuses.map(s =>
+      `<option value="${escHtml(s['שם'])}">${escHtml(s['שם'])}</option>`
+    ).join('');
+  stSel.value = APP.filter.status;
 }
 
 function applyFilters() {
