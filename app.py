@@ -1,5 +1,6 @@
 import webbrowser
 import threading
+import os
 from flask import Flask, jsonify, request, send_from_directory
 import sheets
 
@@ -41,7 +42,8 @@ def create_app(config=None):
                 row = body['row']
                 values = [
                     row['id'], row['שנה'], row['תאריך'], row['ספק'],
-                    row['מס_חשבונית'], row['תיאור'], row['סכום'], row['סטטוס']
+                    row.get('מס_חשבונית', ''), row.get('תיאור', ''), row['סכום'], row['סטטוס'],
+                    row.get('מחלקה', '')
                 ]
                 sheets.append_row('transactions', values)
                 return jsonify({'ok': True})
@@ -50,7 +52,8 @@ def create_app(config=None):
                 row = body['row']
                 values = [
                     row['id'], row['שנה'], row['תאריך'], row['ספק'],
-                    row['מס_חשבונית'], row['תיאור'], row['סכום'], row['סטטוס']
+                    row.get('מס_חשבונית', ''), row.get('תיאור', ''), row['סכום'], row['סטטוס'],
+                    row.get('מחלקה', '')
                 ]
                 sheets.update_row_by_id('transactions', row['id'], values)
                 return jsonify({'ok': True})
@@ -115,10 +118,10 @@ def create_app(config=None):
                 key = 'suppliers'
                 if action == 'create':
                     row = body['row']
-                    sheets.append_row(key, [row['id'], row['שם'], row['פעיל']])
+                    sheets.append_row(key, [row['id'], row['שם'], row['פעיל'], row.get('מחלקה', '')])
                 elif action == 'update':
                     row = body['row']
-                    sheets.update_row_by_id(key, row['id'], [row['id'], row['שם'], row['פעיל']])
+                    sheets.update_row_by_id(key, row['id'], [row['id'], row['שם'], row['פעיל'], row.get('מחלקה', '')])
                 elif action == 'delete':
                     sheets.delete_row_by_id(key, body['id'])
                 else:
@@ -132,6 +135,19 @@ def create_app(config=None):
                 elif action == 'update':
                     row = body['row']
                     sheets.update_row_by_id(key, row['id'], [row['id'], row['שם'], row['צבע']])
+                elif action == 'delete':
+                    sheets.delete_row_by_id(key, body['id'])
+                else:
+                    return jsonify({'ok': False, 'error': f'unknown action: {action}'}), 400
+
+            elif sheet_key == 'department':
+                key = 'departments'
+                if action == 'create':
+                    row = body['row']
+                    sheets.append_row(key, [row['id'], row['שם'], row.get('ברירת_מחדל', 'FALSE')])
+                elif action == 'update':
+                    row = body['row']
+                    sheets.update_row_by_id(key, row['id'], [row['id'], row['שם'], row.get('ברירת_מחדל', 'FALSE')])
                 elif action == 'delete':
                     sheets.delete_row_by_id(key, body['id'])
                 else:
@@ -157,6 +173,15 @@ def create_app(config=None):
 
         except Exception as e:
             return jsonify({'ok': False, 'error': str(e)}), 500
+
+    @app.route('/api/version')
+    def version():
+        try:
+            path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'version.txt')
+            with open(path) as f:
+                return jsonify({'version': f.read().strip()})
+        except Exception:
+            return jsonify({'version': 'unknown'})
 
     return app
 
