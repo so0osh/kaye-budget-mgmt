@@ -728,7 +728,7 @@ function buildCombobox(inputEl, hiddenEl, getOptions) {
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
       items.forEach(el => el.classList.remove('active'));
-      const prev = items[(activeIdx - 1 + items.length) % items.length];
+      const prev = items[(activeIdx <= 0 ? items.length : activeIdx) - 1];
       if (prev) prev.classList.add('active');
     } else if (e.key === 'Enter') {
       e.preventDefault();
@@ -745,6 +745,10 @@ function buildCombobox(inputEl, hiddenEl, getOptions) {
 }
 
 function openTransactionModal(id) {
+  if (!APP.raw.departments.length) {
+    alert('יש להוסיף מחלקה לפני הוספת תנועה. פתח "נהל מחלקות" בהגדרות.');
+    return;
+  }
   _restoreTransactionForm();
 
   const fp = flatpickr('#txn-date', {
