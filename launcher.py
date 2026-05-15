@@ -49,6 +49,33 @@ except Exception:
 
 # ── Pure helpers (also unit-tested) ──────────────────────────────────────────
 
+def _kill_port(port):
+    """Kill any process currently listening on port (Windows + Unix)."""
+    try:
+        if sys.platform == "win32":
+            result = subprocess.run(
+                ["netstat", "-ano"],
+                capture_output=True, text=True, creationflags=CREATE_NO_WINDOW)
+            for line in result.stdout.splitlines():
+                if f":{port}" in line and "LISTENING" in line:
+                    pid = int(line.split()[-1])
+                    if pid > 0:
+                        subprocess.run(["taskkill", "/PID", str(pid), "/F"],
+                                       capture_output=True, creationflags=CREATE_NO_WINDOW)
+                        time.sleep(0.5)
+                    break
+        else:
+            result = subprocess.run(
+                ["lsof", "-ti", f"tcp:{port}"],
+                capture_output=True, text=True)
+            for pid_str in result.stdout.split():
+                os.kill(int(pid_str), 9)
+            if result.stdout.strip():
+                time.sleep(0.5)
+    except Exception:
+        pass
+
+
 def _read_config(path):
     with open(path) as f:
         return json.load(f)
@@ -150,8 +177,9 @@ def _setup_worker(set_status, set_error, close):
             [pip_exe, "install", "-r", os.path.join(APP_DIR, "requirements.txt"), "--quiet"],
             check=True)
 
-        # 6. Start Flask (no console window)
+        # 6. Evict any stale server, then start fresh
         set_status("STARTING SERVER")
+        _kill_port(13885)
         extra = {"creationflags": CREATE_NO_WINDOW} if sys.platform == "win32" else {}
         subprocess.Popen(
             [py_exe, os.path.join(APP_DIR, "app.py")],
