@@ -48,7 +48,11 @@
       "PowerShell(python \"C:\\\\repos\\\\kaye-budget-mgmt\\\\generate_icon.py\" 2>&1)",
       "PowerShell(Start-Process python -ArgumentList \"C:\\\\repos\\\\kaye-budget-mgmt\\\\splash.py\" -PassThru | ForEach-Object { Start-Sleep 4; $_.Kill\\(\\); Write-Host \"splash closed\" })",
       "Bash(gh run *)",
-      "Bash(pytest *)"
+      "Bash(pytest *)",
+      "Bash(Remove-Item *)",
+      "Bash(Get-ChildItem C:\\\\repos\\\\kaye-budget-mgmt\\\\tests *)",
+      "PowerShell(Get-ChildItem C:\\\\repos\\\\kaye-budget-mgmt -Depth 0 | Where-Object { $_.Name -notmatch '^\\(node_modules|\\\\.venv\\)' } | Select-Object Name, PSIsContainer)",
+      "PowerShell(Get-ChildItem \"C:\\\\repos\\\\kaye-budget-mgmt\" | Where-Object { $_.Name -notmatch '^\\(node_modules|\\\\.venv\\)' } | Select-Object -ExpandProperty Name)"
     ]
   }
 }
