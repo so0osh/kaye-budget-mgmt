@@ -414,7 +414,7 @@ function renderCharts() {
       plugins: { legend: { display: false } },
       scales: {
         x: { stacked: true, grid: { display: false }, ticks: { font: { family: 'Heebo', size: 11 } } },
-        y: { stacked: true, grid: { color: '#f0f0f0' }, ticks: {
+        y: { stacked: true, position: 'right', grid: { color: '#f0f0f0' }, ticks: {
           font: { family: 'Heebo', size: 10 },
           callback: v => '₪' + v.toLocaleString(),
         }},
