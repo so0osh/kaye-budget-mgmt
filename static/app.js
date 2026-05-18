@@ -249,6 +249,10 @@ function fmt(n) {
   return '₪' + Math.round(n).toLocaleString('he-IL');
 }
 
+function fmtDec(n) {
+  return '₪' + n.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
 // ═══════════════════════════════════════════════════════
 // KPI RENDER
 // ═══════════════════════════════════════════════════════
@@ -274,13 +278,13 @@ function renderKPIs() {
     </div>
     <div class="kpi-card pink">
       <div class="kpi-label">הוצאות עד היום</div>
-      <div class="kpi-value">${fmt(k.totalSpent)}</div>
+      <div class="kpi-value">${fmtDec(k.totalSpent)}</div>
       <div class="util-bar-wrap"><div class="util-bar" style="width:${Math.min(100,k.utilizationPct).toFixed(1)}%"></div></div>
       <div class="kpi-sub">${k.utilizationPct.toFixed(1)}% מהתקציב</div>
     </div>
     <div class="kpi-card green">
       <div class="kpi-label">יתרה נוכחית</div>
-      <div class="kpi-value">${fmt(k.currentBalance)}</div>
+      <div class="kpi-value">${fmtDec(k.currentBalance)}</div>
       ${balanceBadge}
     </div>
     <div class="kpi-card amber">
@@ -290,7 +294,7 @@ function renderKPIs() {
     </div>
     <div class="kpi-card teal">
       <div class="kpi-label">יתרה תפעולית</div>
-      <div class="kpi-value">${fmt(k.operativeBalance)}</div>
+      <div class="kpi-value">${fmtDec(k.operativeBalance)}</div>
       <div class="kpi-sub">לאחר הפחתת שמורות</div>
     </div>
     <div class="kpi-card green">
@@ -300,7 +304,7 @@ function renderKPIs() {
     </div>
     <div class="kpi-card amber">
       <div class="kpi-label">תקציב חודשי מותר</div>
-      <div class="kpi-value">${fmt(k.monthlyAllowed)}</div>
+      <div class="kpi-value">${fmtDec(k.monthlyAllowed)}</div>
       <div class="kpi-sub">ממוצע • יתרה ÷ חודשים</div>
     </div>
     <div class="kpi-card pink">
@@ -405,6 +409,7 @@ function renderCharts() {
     data: { labels, datasets },
     options: {
       responsive: true,
+      rtl: true,
       animation: { duration: 300 },
       plugins: { legend: { display: false } },
       scales: {
