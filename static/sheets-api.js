@@ -92,16 +92,27 @@ const _BASE = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}`;
 const _sheetNumericIds = {};
 
 // ═══════════════════════════════════════════════════════
+// HTTP HELPER
+// ═══════════════════════════════════════════════════════
+async function _apiCall(url, opts = {}) {
+  const res = await fetch(url, opts);
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Sheets API ${res.status}: ${text}`);
+  }
+  return res.json();
+}
+
+// ═══════════════════════════════════════════════════════
 // READ
 // ═══════════════════════════════════════════════════════
 async function readAllSheets() {
   const token  = await getToken();
   const ranges = Object.values(SHEET_NAMES).map(n => `${n}!A:Z`);
   const params = ranges.map(r => `ranges=${encodeURIComponent(r)}`).join('&');
-  const res    = await fetch(`${_BASE}/values:batchGet?${params}`, {
+  const data   = await _apiCall(`${_BASE}/values:batchGet?${params}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
-  const data   = await res.json();
   const result = {};
   const keys   = Object.keys(SHEET_NAMES);
   data.valueRanges.forEach((vr, i) => {
@@ -123,7 +134,7 @@ async function readAllSheets() {
 async function appendRow(sheetKey, values) {
   const token = await getToken();
   const name  = SHEET_NAMES[sheetKey];
-  await fetch(
+  await _apiCall(
     `${_BASE}/values/${encodeURIComponent(name)}!A1:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`,
     {
       method:  'POST',
@@ -136,13 +147,13 @@ async function appendRow(sheetKey, values) {
 async function updateRowById(sheetKey, rowId, values) {
   const token   = await getToken();
   const name    = SHEET_NAMES[sheetKey];
-  const colRes  = await fetch(`${_BASE}/values/${encodeURIComponent(name)}!A:A`, {
+  const colData  = await _apiCall(`${_BASE}/values/${encodeURIComponent(name)}!A:A`, {
     headers: { Authorization: `Bearer ${token}` },
   });
-  const col      = (await colRes.json()).values || [];
+  const col      = colData.values || [];
   const rowIndex = col.findIndex(cell => cell[0] === String(rowId));
   if (rowIndex < 0) throw new Error(`Row ${rowId} not found in ${sheetKey}`);
-  await fetch(
+  await _apiCall(
     `${_BASE}/values/${encodeURIComponent(name)}!A${rowIndex + 1}?valueInputOption=RAW`,
     {
       method:  'PUT',
@@ -155,29 +166,30 @@ async function updateRowById(sheetKey, rowId, values) {
 async function _getSheetNumericId(sheetKey) {
   if (_sheetNumericIds[sheetKey] !== undefined) return _sheetNumericIds[sheetKey];
   const token  = await getToken();
-  const res    = await fetch(`${_BASE}?fields=sheets.properties`, {
+  const data   = await _apiCall(`${_BASE}?fields=sheets.properties`, {
     headers: { Authorization: `Bearer ${token}` },
   });
-  const data   = await res.json();
   data.sheets.forEach(s => {
     for (const [key, name] of Object.entries(SHEET_NAMES)) {
       if (s.properties.title === name) _sheetNumericIds[key] = s.properties.sheetId;
     }
   });
-  return _sheetNumericIds[sheetKey];
+  const id = _sheetNumericIds[sheetKey];
+  if (id === undefined) throw new Error(`Sheet not found in spreadsheet: ${sheetKey}`);
+  return id;
 }
 
 async function deleteRowById(sheetKey, rowId) {
   const token    = await getToken();
   const name     = SHEET_NAMES[sheetKey];
-  const colRes   = await fetch(`${_BASE}/values/${encodeURIComponent(name)}!A:A`, {
+  const colData  = await _apiCall(`${_BASE}/values/${encodeURIComponent(name)}!A:A`, {
     headers: { Authorization: `Bearer ${token}` },
   });
-  const col      = (await colRes.json()).values || [];
+  const col      = colData.values || [];
   const rowIndex = col.findIndex(cell => cell[0] === String(rowId));
   if (rowIndex < 0) throw new Error(`Row ${rowId} not found in ${sheetKey}`);
   const sheetId  = await _getSheetNumericId(sheetKey);
-  await fetch(`${_BASE}:batchUpdate`, {
+  await _apiCall(`${_BASE}:batchUpdate`, {
     method:  'POST',
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -195,16 +207,15 @@ async function deleteRowById(sheetKey, rowId) {
 // ═══════════════════════════════════════════════════════
 async function seedSheets() {
   const token   = await getToken();
-  const metaRes = await fetch(`${_BASE}?fields=sheets.properties`, {
+  const meta     = await _apiCall(`${_BASE}?fields=sheets.properties`, {
     headers: { Authorization: `Bearer ${token}` },
   });
-  const meta     = await metaRes.json();
   const existing = new Set(meta.sheets.map(s => s.properties.title));
 
   // Create any missing tabs
   const missing = Object.values(SHEET_NAMES).filter(name => !existing.has(name));
   if (missing.length) {
-    await fetch(`${_BASE}:batchUpdate`, {
+    await _apiCall(`${_BASE}:batchUpdate`, {
       method:  'POST',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -215,13 +226,12 @@ async function seedSheets() {
 
   // Write headers + seed data to empty tabs only
   for (const [key, name] of Object.entries(SHEET_NAMES)) {
-    const checkRes  = await fetch(`${_BASE}/values/${encodeURIComponent(name)}!A1:A1`, {
+    const checkData = await _apiCall(`${_BASE}/values/${encodeURIComponent(name)}!A1:A1`, {
       headers: { Authorization: `Bearer ${token}` },
     });
-    const checkData = await checkRes.json();
     if (checkData.values) continue; // already has content
 
-    await fetch(
+    await _apiCall(
       `${_BASE}/values/${encodeURIComponent(name)}!A1?valueInputOption=RAW`,
       {
         method:  'PUT',
