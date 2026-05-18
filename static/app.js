@@ -109,21 +109,47 @@ function escHtml(s) {
 // BOOTSTRAP
 // ═══════════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', () => {
-  loadData();
+  // GIS is loaded async — wait for it before calling initAuth
+  if (typeof google !== 'undefined' && google.accounts) {
+    initAuth();
+    _checkExistingSession();
+  } else {
+    window.onGoogleLibraryLoad = () => { initAuth(); _checkExistingSession(); };
+  }
 });
 
-async function loadData() {
-  const [dataRes, versionRes] = await Promise.all([
-    fetch('/api/data'),
-    fetch('/api/version'),
-  ]);
-  APP.raw     = await dataRes.json();
-  if (APP.raw.error) {
-    document.body.innerHTML = `<div style="padding:40px;color:#c00;font-size:16px">שגיאה בטעינת נתונים: ${APP.raw.error}</div>`;
+function _checkExistingSession() {
+  const token  = sessionStorage.getItem('gis_token');
+  const expiry = parseInt(sessionStorage.getItem('gis_expiry') || '0', 10);
+  if (token && Date.now() < expiry) {
+    document.getElementById('signin-overlay').style.display = 'none';
+    loadData();
+  }
+  // else: sign-in overlay stays visible, user must click "כניסה עם Google"
+}
+
+async function startSignIn() {
+  document.getElementById('signin-btn').disabled = true;
+  document.getElementById('signin-btn').textContent = 'מתחבר...';
+  const token = await signIn();
+  if (!token) {
+    document.getElementById('signin-btn').disabled = false;
+    document.getElementById('signin-btn').textContent = 'כניסה עם Google';
     return;
   }
-  const vData = await versionRes.json();
-  APP.version = vData.version || '';
+  document.getElementById('signin-overlay').style.display = 'none';
+  loadData();
+}
+
+async function loadData() {
+  try {
+    await seedSheets();
+    APP.raw = await readAllSheets();
+  } catch (e) {
+    document.body.innerHTML = `<div style="padding:40px;color:#c00;font-size:16px">שגיאה בטעינת נתונים: ${e.message}</div>`;
+    return;
+  }
+  APP.version = APP_VERSION;
   const verEl = document.getElementById('app-version');
   if (verEl) verEl.textContent = APP.version;
   assignColors();
