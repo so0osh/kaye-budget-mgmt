@@ -413,7 +413,7 @@ function renderCharts() {
       animation: { duration: 300 },
       plugins: { legend: { display: false } },
       scales: {
-        x: { stacked: true, grid: { display: false }, ticks: { font: { family: 'Heebo', size: 11 } } },
+        x: { stacked: true, reverse: true, grid: { display: false }, ticks: { font: { family: 'Heebo', size: 11 } } },
         y: { stacked: true, position: 'right', grid: { color: '#f0f0f0' }, ticks: {
           font: { family: 'Heebo', size: 10 },
           callback: v => '₪' + v.toLocaleString(),
