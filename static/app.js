@@ -534,7 +534,11 @@ async function saveReserve() {
   const row = { id: _reserveEditId || String(Date.now()), שנה: APP.year, שם: name, סכום: amount, תיאור: desc };
   const action = _reserveEditId ? 'update' : 'create';
 
-  await fetch('/api/reserve', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ action, row }) });
+  if (action === 'create') {
+    await appendRow('reserves', [row.id, row['שנה'], row['שם'], row['סכום'], row['תיאור']]);
+  } else {
+    await updateRowById('reserves', row.id, [row.id, row['שנה'], row['שם'], row['סכום'], row['תיאור']]);
+  }
 
   if (action === 'create') {
     APP.raw.reserves.push(row);
@@ -552,8 +556,7 @@ function editReserve(id) { openReserveModal(id); }
 
 function deleteReserve(id, name) {
   APP.pendingDelete = async () => {
-    await fetch('/api/reserve', { method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ action: 'delete', id }) });
+    await deleteRowById('reserves', id);
     APP.raw.reserves = APP.raw.reserves.filter(r => r.id !== id);
     renderReserves();
     renderKPIs();
@@ -736,8 +739,7 @@ function printJournal() {
 
 function deleteTransaction(id, supplier, date) {
   APP.pendingDelete = async () => {
-    await fetch('/api/transaction', { method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ action: 'delete', id }) });
+    await deleteRowById('transactions', id);
     APP.raw.transactions = APP.raw.transactions.filter(r => r.id !== id);
     render();
   };
@@ -996,11 +998,12 @@ async function saveTransaction() {
   };
   const action = id ? 'update' : 'create';
 
-  await fetch('/api/transaction', {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ action, row }),
-  });
+  const txnValues = [row.id, row['שנה'], row['תאריך'], row['ספק'], row['מס_חשבונית'], row['תיאור'], row['סכום'], row['סטטוס'], row['מחלקה']];
+  if (action === 'create') {
+    await appendRow('transactions', txnValues);
+  } else {
+    await updateRowById('transactions', row.id, txnValues);
+  }
 
   if (action === 'create') {
     APP.raw.transactions.push(row);
@@ -1084,9 +1087,7 @@ function renderSuppliersList() {
 }
 
 async function updateSupplierDept(id, name, active, deptName) {
-  const row = { id, שם: name, פעיל: active, מחלקה: deptName };
-  await fetch('/api/settings', { method: 'POST', headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ type: 'supplier', action: 'update', row }) });
+  await updateRowById('suppliers', id, [id, name, active, deptName]);
   const s = APP.raw.suppliers.find(x => x.id === id);
   if (s) s['מחלקה'] = deptName;
   renderSuppliersList();
@@ -1096,8 +1097,7 @@ async function addSupplier() {
   const name = document.getElementById('new-supplier-name').value.trim();
   if (!name) return;
   const row = { id: String(Date.now()), שם: name, פעיל: 'TRUE', מחלקה: _suppliersModalDept };
-  await fetch('/api/settings', { method: 'POST', headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ type: 'supplier', action: 'create', row }) });
+  await appendRow('suppliers', [row.id, row['שם'], row['פעיל'], row['מחלקה']]);
   APP.raw.suppliers.push(row);
   assignColors();
   document.getElementById('new-supplier-name').value = '';
@@ -1107,17 +1107,14 @@ async function addSupplier() {
 async function toggleSupplierActive(id, name, current) {
   const newActive = current === 'TRUE' ? 'FALSE' : 'TRUE';
   const s   = APP.raw.suppliers.find(x => x.id === id);
-  const row = { id, שם: name, פעיל: newActive, מחלקה: s ? (s['מחלקה'] || '') : '' };
-  await fetch('/api/settings', { method: 'POST', headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ type: 'supplier', action: 'update', row }) });
+  await updateRowById('suppliers', id, [id, name, newActive, s ? (s['מחלקה'] || '') : '']);
   if (s) s['פעיל'] = newActive;
   renderSuppliersList();
 }
 
 async function deleteSupplier(id, name) {
   if (!confirm(`למחוק את הספק "${name}"?`)) return;
-  await fetch('/api/settings', { method: 'POST', headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ type: 'supplier', action: 'delete', id }) });
+  await deleteRowById('suppliers', id);
   APP.raw.suppliers = APP.raw.suppliers.filter(s => s.id !== id);
   assignColors();
   renderSuppliersList();
@@ -1159,8 +1156,7 @@ async function addStatus() {
   const color = document.getElementById('new-status-color').value;
   if (!name) return;
   const row = { id: String(Date.now()), שם: name, צבע: color };
-  await fetch('/api/settings', { method: 'POST', headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ type: 'status', action: 'create', row }) });
+  await appendRow('statuses', [row.id, row['שם'], row['צבע']]);
   APP.raw.statuses.push(row);
   document.getElementById('new-status-name').value = '';
   renderStatusesList();
@@ -1168,8 +1164,7 @@ async function addStatus() {
 
 async function deleteStatus(id, name) {
   if (!confirm(`למחוק את הסטטוס "${name}"?`)) return;
-  await fetch('/api/settings', { method: 'POST', headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ type: 'status', action: 'delete', id }) });
+  await deleteRowById('statuses', id);
   APP.raw.statuses = APP.raw.statuses.filter(s => s.id !== id);
   renderStatusesList();
 }
@@ -1225,8 +1220,7 @@ async function addDepartment() {
   const name = document.getElementById('new-dept-name').value.trim();
   if (!name) return;
   const row = { id: String(Date.now()), שם: name, ברירת_מחדל: 'FALSE' };
-  await fetch('/api/settings', { method: 'POST', headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ type: 'department', action: 'create', row }) });
+  await appendRow('departments', [row.id, row['שם'], row['ברירת_מחדל']]);
   APP.raw.departments.push(row);
   document.getElementById('new-dept-name').value = '';
   renderDepartmentsList();
@@ -1235,24 +1229,19 @@ async function addDepartment() {
 async function setDefaultDept(id) {
   const prev = APP.raw.departments.find(d => d['ברירת_מחדל'] === 'TRUE');
   if (prev && prev.id !== id) {
-    const prevRow = { ...prev, ברירת_מחדל: 'FALSE' };
-    await fetch('/api/settings', { method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ type: 'department', action: 'update', row: prevRow }) });
+    await updateRowById('departments', prev.id, [prev.id, prev['שם'], 'FALSE']);
     prev['ברירת_מחדל'] = 'FALSE';
   }
   const next = APP.raw.departments.find(d => d.id === id);
   if (next) {
-    const nextRow = { ...next, ברירת_מחדל: 'TRUE' };
-    await fetch('/api/settings', { method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ type: 'department', action: 'update', row: nextRow }) });
+    await updateRowById('departments', next.id, [next.id, next['שם'], 'TRUE']);
     next['ברירת_מחדל'] = 'TRUE';
   }
 }
 
 async function deleteDepartment(id, name) {
   if (!confirm(`למחוק את המחלקה "${name}"?`)) return;
-  await fetch('/api/settings', { method: 'POST', headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ type: 'department', action: 'delete', id }) });
+  await deleteRowById('departments', id);
   APP.raw.departments = APP.raw.departments.filter(d => d.id !== id);
   renderDepartmentsList();
 }
@@ -1288,9 +1277,7 @@ function renderYearsList() {
 }
 
 async function updateYear(yearStr, budget, endMonth) {
-  const row = { שנה: yearStr, תקציב_פתיחה: budget, חודש_סיום: endMonth };
-  await fetch('/api/settings', { method: 'POST', headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ type: 'year', action: 'update', row }) });
+  await updateRowById('budget', yearStr, [yearStr, budget, endMonth]);
   const y = APP.raw.budget.find(r => r['שנה'] === yearStr);
   if (y) { y['תקציב_פתיחה'] = budget; y['חודש_סיום'] = endMonth; }
   renderKPIs();
@@ -1303,8 +1290,7 @@ async function addYear() {
   if (!yearStr || !budget) return;
 
   const row = { שנה: yearStr, תקציב_פתיחה: budget, חודש_סיום: endMonth };
-  await fetch('/api/settings', { method: 'POST', headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ type: 'year', action: 'create', row }) });
+  await appendRow('budget', [row['שנה'], row['תקציב_פתיחה'], row['חודש_סיום']]);
 
   APP.raw.budget.push(row);
   document.getElementById('new-year-str').value    = '';
