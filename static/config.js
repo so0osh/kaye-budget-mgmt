@@ -1,3 +1,3 @@
-const SPREADSHEET_ID  = '1fzPU4gFzMtUrTUF7X7hFnrM_gwCbBfNJXIZnPE-McmU';
-const OAUTH_CLIENT_ID = '822736566799-4tlpjrv321n900laoog6rt1u3t0r76kp.apps.googleusercontent.com';
+const SPREADSHEET_ID  = '1h-OtKmnARAg_ZMkGuZLt1daSh34A0Wl2v950_oztWZw';
+const OAUTH_CLIENT_ID = '243081075022-0otkqlfnmt81pqnv46o5jtv69c2josoo.apps.googleusercontent.com';
 const APP_VERSION     = 'v1.3.8';
