@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ניהול תקציב פרסום</title>
   <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 </head>
 <body>
@@ -290,9 +290,24 @@
   </div>
 </div>
 
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/he.js"></script>
-<script src="/app.js"></script>
+<script src="config.js"></script>
+<script src="sheets-api.js"></script>
+<script src="app.js"></script>
+
+<!-- ═══════════ SIGN-IN OVERLAY ═══════════ -->
+<div id="signin-overlay" class="modal-overlay" style="background:rgba(0,0,0,0.7);z-index:9999;display:flex;align-items:center;justify-content:center">
+  <div class="modal modal-xs" onclick="event.stopPropagation()" style="text-align:center;padding:36px 40px">
+    <div class="header-logo" style="margin:0 auto 16px;font-size:28px">ק</div>
+    <div style="font-size:18px;font-weight:700;margin-bottom:6px">ניהול תקציב פרסום</div>
+    <div style="font-size:13px;color:#727272;margin-bottom:24px">מכללת קיי</div>
+    <button id="signin-btn" class="btn btn-primary" style="width:100%;font-size:15px;padding:12px" onclick="startSignIn()">
+      כניסה עם Google
+    </button>
+  </div>
+</div>
 </body>
 </html>
